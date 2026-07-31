@@ -22,3 +22,15 @@ Copy all project files into your cloned `My-3D-Website` folder, commit in GitHub
 ## Custom domain
 
 In Vercel, open Project → Settings → Domains, add the purchased domain, then apply the DNS records Vercel shows. Update `NEXT_PUBLIC_SITE_URL` to the custom domain and redeploy.
+
+## Crio full-project synchronization
+
+`/api/crio` now extracts all available Professional Projects and Mini Projects from the configured Crio portfolio. It reads both rendered HTML and embedded JSON data, deduplicates projects, and returns title, date, category, complete description, skills, project-detail URL, and demo URL when available. The endpoint refreshes every 15 minutes.
+
+Required Vercel variable:
+
+```env
+CRIO_PORTFOLIO_URL=https://www.crio.do/learn/portfolio/subham-cm6/
+```
+
+After deploying, open `/api/crio` on the deployed site to verify `live: true` and inspect `projectCount`. If Crio blocks server-side retrieval, the website will show the resume-backed fallback and a visible warning.
