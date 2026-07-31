@@ -12,6 +12,7 @@ type CrioProject = {
   category: "Professional Project" | "Mini Project";
   detailsUrl?: string;
   demoUrl?: string;
+  githubUrl?: string;
   source?: "Crio" | "Resume" | "Crio + Resume";
 };
 
@@ -50,7 +51,8 @@ function extractProjectsFromDom(html: string, sourceUrl: string): CrioProject[] 
     })).get();
 
     const detailsUrl = links.find(l => /project details/i.test(l.text))?.href;
-    const demoUrl = links.find(l => /view demo/i.test(l.text))?.href;
+    const demoUrl = links.find(l => /view demo|live demo/i.test(l.text))?.href;
+    const githubUrl = links.find(l => /github/i.test(l.text) || /github\.com/i.test(l.href || ""))?.href;
 
     const dateCandidate = container.find("time, [class*='date'], [class*='duration']").first().text();
     const dateFromText = allText.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*(?:-|–|to)?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?[a-z]*\s*\d{4}/i)?.[0];
@@ -88,7 +90,8 @@ function extractProjectsFromDom(html: string, sourceUrl: string): CrioProject[] 
       date,
       category,
       detailsUrl,
-      demoUrl
+      demoUrl,
+      githubUrl
     });
   });
 
@@ -118,7 +121,8 @@ function walkJson(value: unknown, sourceUrl: string, result: CrioProject[]) {
       date: normalise(String(obj.date || obj.duration || obj.timeline || obj.completedAt || "Crio")),
       category: /mini/i.test(String(obj.type || obj.category || "")) ? "Mini Project" : "Professional Project",
       detailsUrl: absoluteUrl(String(obj.detailsUrl || obj.projectUrl || obj.url || ""), sourceUrl),
-      demoUrl: absoluteUrl(String(obj.demoUrl || obj.liveUrl || ""), sourceUrl)
+      demoUrl: absoluteUrl(String(obj.demoUrl || obj.liveUrl || ""), sourceUrl),
+      githubUrl: absoluteUrl(String(obj.githubUrl || obj.repositoryUrl || obj.repoUrl || ""), sourceUrl)
     });
   }
 
@@ -160,6 +164,7 @@ function mergeProjectRecords(primary: CrioProject, secondary: CrioProject): Crio
     category: primary.category || secondary.category,
     detailsUrl: primary.detailsUrl || secondary.detailsUrl,
     demoUrl: primary.demoUrl || secondary.demoUrl,
+    githubUrl: primary.githubUrl || secondary.githubUrl,
     source
   };
 }
