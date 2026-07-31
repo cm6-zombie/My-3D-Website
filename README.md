@@ -1,40 +1,24 @@
-# Mainak Chandra - 3D Dynamic Portfolio
+# Mainak Chandra — 3D Dynamic Portfolio v2
 
-A production-ready Next.js portfolio using React Three Fiber, live GitHub data, configurable LeetCode statistics, Crio project extraction, and an embedded downloadable resume.
+Features: interactive React Three Fiber world, resume-grounded AI assistant, live GitHub repository data, optional GitHub contribution graph, LeetCode solved statistics, Crio project synchronization with fallback, cloud resume URL, Vercel Analytics, animations, responsive UI, SEO metadata, sitemap, robots.txt and custom-domain readiness.
 
-## Run locally
+## Environment variables
 
-```bash
-npm install
-cp .env.example .env.local
-# Set your public LeetCode username in .env.local
-npm run dev
-```
+Copy `.env.example` to `.env.local` for local development. In Vercel, add:
 
-Open `http://localhost:3000`.
+- `GITHUB_USERNAME=cm6-zombie`
+- `GITHUB_TOKEN=` optional but required for the contribution calendar
+- `LEETCODE_USERNAME=mainak000`
+- `CRIO_PORTFOLIO_URL=https://www.crio.do/learn/portfolio/subham-cm6/`
+- `RESUME_URL=/Mainak-Chandra-Resume.pdf` or a public cloud PDF URL
+- `NEXT_PUBLIC_SITE_URL=https://mainak-portfolio-chi.vercel.app`
+- `OPENAI_API_KEY=` optional; without it the assistant uses the built-in resume-grounded retrieval mode
+- `OPENAI_MODEL=` required only when `OPENAI_API_KEY` is set
 
-## Configure
+## Update the existing GitHub repository
 
-- `GITHUB_USERNAME`: currently `cm6-zombie`.
-- `GITHUB_TOKEN`: optional, but recommended to avoid low unauthenticated GitHub API limits.
-- `LEETCODE_USERNAME`: set to `mainak000` for the public profile `https://leetcode.com/u/mainak000/`.
-- `CRIO_PORTFOLIO_URL`: currently the supplied Crio portfolio URL.
-- `NEXT_PUBLIC_REFRESH_MS`: browser refresh interval; default 300000 ms (5 minutes).
+Copy all project files into your cloned `My-3D-Website` folder, commit in GitHub Desktop, and push to the `my-projects` branch. Vercel will redeploy automatically.
 
-## How dynamic updates work
+## Custom domain
 
-- GitHub: fetched server-side every 5 minutes from GitHub's API.
-- LeetCode: fetched server-side every 5 minutes from LeetCode GraphQL; this endpoint is unofficial and may change.
-- Crio: parsed server-side every 15 minutes. When Crio blocks scraping or changes markup, resume-backed projects are shown.
-- Resume: replace `public/Mainak-Chandra-Resume.pdf` and redeploy. For fully automatic resume replacement, connect cloud storage or a CMS webhook in your deployment.
-
-## Deploy on Vercel
-
-1. Push this folder to a GitHub repository.
-2. Import the repository in Vercel.
-3. Add environment variables from `.env.example`.
-4. Deploy.
-
-## Important reality about “real time”
-
-Public profile sites do not all provide stable webhooks. This implementation uses safe polling and server-side caching. GitHub can be made near-instant with a webhook and database; LeetCode and Crio generally require polling because they do not expose reliable public update webhooks for this use case.
+In Vercel, open Project → Settings → Domains, add the purchased domain, then apply the DNS records Vercel shows. Update `NEXT_PUBLIC_SITE_URL` to the custom domain and redeploy.

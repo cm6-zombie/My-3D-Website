@@ -1,62 +1,34 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Github, Code2, BriefcaseBusiness, ExternalLink, Download, RefreshCw } from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
+import { motion,AnimatePresence } from "framer-motion";
+import { Github,Code2,BriefcaseBusiness,ExternalLink,Download,RefreshCw,MessageCircle,Send,X,Star,GitFork,BarChart3,Globe2,ChevronDown } from "lucide-react";
 import { profile } from "@/lib/profile";
-const Scene = dynamic(() => import("./Scene"), { ssr: false });
+const Scene=dynamic(()=>import("./Scene"),{ssr:false});
+type AnyData=Record<string,any>;
 
-type GithubData = { user?: any; repos?: any[]; error?: string };
-type LeetCodeData = { configured?: boolean; username?: string; acceptanceRate?: number; accepted?: number; ranking?: number; error?: string; message?: string };
-type CrioData = { projects?: any[]; live?: boolean; warning?: string };
-
-export default function Portfolio() {
-  const [github, setGithub] = useState<GithubData>({});
-  const [leetcode, setLeetcode] = useState<LeetCodeData>({});
-  const [crio, setCrio] = useState<CrioData>({ projects: profile.fallbackProjects });
-  const [updated, setUpdated] = useState<Date | null>(null);
-  const refreshMs = Number(process.env.NEXT_PUBLIC_REFRESH_MS || 300000);
-
-  async function load() {
-    const [g, l, c] = await Promise.allSettled([
-      fetch("/api/github").then(r => r.json()), fetch("/api/leetcode").then(r => r.json()), fetch("/api/crio").then(r => r.json())
-    ]);
-    if (g.status === "fulfilled") setGithub(g.value);
-    if (l.status === "fulfilled") setLeetcode(l.value);
-    if (c.status === "fulfilled") setCrio(c.value);
-    setUpdated(new Date());
-  }
-  useEffect(() => { load(); const id = setInterval(load, refreshMs); return () => clearInterval(id); }, [refreshMs]);
-
-  return <main>
-    <nav className="nav"><strong>MC<span>.</span></strong><div><a href="#projects">Projects</a><a href="#experience">Experience</a><a href={profile.links.resume} target="_blank">Resume</a></div></nav>
-    <section className="hero">
-      <div className="hero-copy"><p className="eyebrow">BUILD · TEST · SUPPORT · IMPROVE</p><h1>{profile.name}</h1><h2>{profile.title}</h2><p>{profile.summary}</p>
-        <div className="actions"><a className="primary" href={profile.links.resume} target="_blank"><Download size={18}/> Resume</a><a href={profile.links.github} target="_blank"><Github size={18}/> GitHub</a><a href={profile.links.crio} target="_blank"><Code2 size={18}/> Crio</a></div>
-        <button className="sync" onClick={load}><RefreshCw size={14}/> {updated ? `Synced ${updated.toLocaleTimeString()}` : "Syncing live profiles..."}</button>
-      </div><div className="scene"><Scene /></div>
-    </section>
-
-    <section className="metrics">
-      <article><Github/><small>GitHub</small><b>{github.user?.publicRepos ?? "—"}</b><span>public repositories</span></article>
-      <article><Code2/><small>LeetCode</small><b>{leetcode.configured ? `${leetcode.acceptanceRate ?? "—"}%` : "Setup"}</b><span>{leetcode.configured ? `${leetcode.accepted ?? 0} accepted` : "Add public username"}</span></article>
-      <article><BriefcaseBusiness/><small>Experience</small><b>7+</b><span>years in IT</span></article>
-    </section>
-
-    <section className="section"><p className="eyebrow">CAPABILITIES</p><h2>Skills that connect automation with operations.</h2><div className="skill-grid">
-      <Skill title="Technical" items={profile.technicalSkills}/><Skill title="Soft skills" items={profile.softSkills}/><Skill title="Leadership" items={profile.leadershipSkills}/>
-    </div></section>
-
-    <section id="projects" className="section"><p className="eyebrow">SELECTED WORK</p><div className="section-head"><h2>Projects</h2><span>{crio.live ? "Live from Crio" : "Resume-backed fallback"}</span></div><div className="cards">
-      {(crio.projects || profile.fallbackProjects).map((p, i) => <motion.article className="card" key={`${p.title}-${i}`} initial={{opacity:0,y:24}} whileInView={{opacity:1,y:0}} viewport={{once:true}}>
-        <span className="number">0{i+1}</span><h3>{p.title}</h3><small>{p.date}</small><p>{p.description}</p><div className="tags">{(p.skills || []).slice(0,8).map((s:string)=><span key={s}>{s}</span>)}</div>
-      </motion.article>)}
-    </div></section>
-
-    {github.repos?.length ? <section className="section"><p className="eyebrow">LIVE GITHUB</p><h2>Recently updated repositories</h2><div className="repo-list">{github.repos.slice(0,6).map(r=><a href={r.url} target="_blank" key={r.name}><div><b>{r.name}</b><p>{r.description || "No description provided."}</p></div><span>{r.language || "Code"} <ExternalLink size={14}/></span></a>)}</div></section> : null}
-
-    <section id="experience" className="section"><p className="eyebrow">CAREER</p><h2>Experience</h2><div className="timeline">{profile.experience.map(e=><article key={e.company}><div className="dot"/><small>{e.period}</small><h3>{e.role}</h3><h4>{e.company}</h4>{e.points.map(p=><p key={p}>{p}</p>)}</article>)}</div></section>
-    <footer><span>© {new Date().getFullYear()} Mainak Chandra</span><a href={`mailto:${profile.email}`}>{profile.email}</a></footer>
-  </main>;
-}
-function Skill({title,items}:{title:string;items:string[]}) { return <article><h3>{title}</h3><div className="tags">{items.map(x=><span key={x}>{x}</span>)}</div></article> }
+export default function Portfolio(){
+ const [github,setGithub]=useState<AnyData>({});const [leetcode,setLeetcode]=useState<AnyData>({});const [crio,setCrio]=useState<AnyData>({projects:profile.fallbackProjects});const [config,setConfig]=useState<AnyData>({resumeUrl:profile.links.resume});const [updated,setUpdated]=useState<Date|null>(null);const [chat,setChat]=useState(false);const [messages,setMessages]=useState([{role:"assistant",text:"Ask me about Mainak's QA automation, AWS/Linux experience, projects, or leadership."}]);const [question,setQuestion]=useState("");const [thinking,setThinking]=useState(false);const refreshMs=Number(process.env.NEXT_PUBLIC_REFRESH_MS||300000);
+ async function load(){const results=await Promise.allSettled([fetch("/api/github").then(r=>r.json()),fetch("/api/leetcode").then(r=>r.json()),fetch("/api/crio").then(r=>r.json()),fetch("/api/config").then(r=>r.json())]);if(results[0].status==="fulfilled")setGithub(results[0].value);if(results[1].status==="fulfilled")setLeetcode(results[1].value);if(results[2].status==="fulfilled")setCrio(results[2].value);if(results[3].status==="fulfilled")setConfig(results[3].value);setUpdated(new Date())}
+ useEffect(()=>{load();const id=setInterval(load,refreshMs);return()=>clearInterval(id)},[refreshMs]);
+ async function ask(){if(!question.trim()||thinking)return;const q=question.trim();setMessages(m=>[...m,{role:"user",text:q}]);setQuestion("");setThinking(true);try{const r=await fetch("/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});const j=await r.json();setMessages(m=>[...m,{role:"assistant",text:j.answer||"I could not answer that from the portfolio data."}])}catch{setMessages(m=>[...m,{role:"assistant",text:"The assistant is temporarily unavailable."}])}finally{setThinking(false)}}
+ const totals=useMemo(()=>Object.fromEntries((leetcode.breakdown||[]).map((x:any)=>[x.difficulty,x.count])),[leetcode]);
+ return <main>
+  <nav className="nav"><a className="brand" href="#top">MC<span>.</span></a><div className="navlinks"><a href="#projects">Projects</a><a href="#stats">Stats</a><a href="#experience">Experience</a><a href={config.resumeUrl} target="_blank">Resume</a></div></nav>
+  <section id="top" className="hero"><motion.div className="hero-copy" initial={{opacity:0,x:-35}} animate={{opacity:1,x:0}} transition={{duration:.8}}><p className="eyebrow">BUILD · TEST · SUPPORT · IMPROVE</p><h1>{profile.name}</h1><h2>{profile.title}</h2><p>{profile.summary}</p><div className="actions"><a className="primary" href={config.resumeUrl} target="_blank"><Download size={18}/> Resume</a><a href={profile.links.github} target="_blank"><Github size={18}/> GitHub</a><a href={profile.links.leetcode} target="_blank"><Code2 size={18}/> LeetCode</a><a href={profile.links.crio} target="_blank"><Globe2 size={18}/> Crio</a></div><button className="sync" onClick={load}><RefreshCw size={14}/>{updated?`Synced ${updated.toLocaleTimeString()}`:"Syncing live profiles..."}</button></motion.div><motion.div className="scene" initial={{opacity:0,scale:.85}} animate={{opacity:1,scale:1}} transition={{duration:1}}><Scene/><div className="scene-hint">Drag to explore · hover skill nodes</div></motion.div></section>
+  <section id="stats" className="metrics"><Metric icon={<Github/>} label="GitHub repositories" value={github.user?.publicRepos??"—"} sub={`${github.user?.followers??0} followers`}/><Metric icon={<Code2/>} label="LeetCode solved" value={leetcode.accepted??"—"} sub={`${leetcode.acceptanceRate??"—"}% acceptance`}/><Metric icon={<BriefcaseBusiness/>} label="Professional experience" value="7+" sub="years in IT"/><Metric icon={<BarChart3/>} label="Annual contributions" value={github.contributions?.totalContributions??"—"} sub={github.contributionsConfigured?"GitHub GraphQL live":"Add GITHUB_TOKEN"}/></section>
+  <section className="section"><p className="eyebrow">CAPABILITIES</p><h2>Automation depth. Operations discipline. Production ownership.</h2><div className="skill-grid"><Skill title="Technical" items={profile.technicalSkills}/><Skill title="Soft skills" items={profile.softSkills}/><Skill title="Leadership" items={profile.leadershipSkills}/></div></section>
+  <section className="section"><div className="section-head"><div><p className="eyebrow">GITHUB ACTIVITY</p><h2>Contribution graph</h2></div><span>{github.contributionsConfigured?"Live 12-month activity":"Token required for private GraphQL query"}</span></div><ContributionGraph data={github.contributions}/></section>
+  <section className="section"><p className="eyebrow">LEETCODE TRACKING</p><h2>Problem-solving progress</h2><div className="leetcode-panel"><div className="donut" style={{"--p":`${Math.min(100,leetcode.acceptanceRate||0)*3.6}deg`} as any}><div><b>{leetcode.acceptanceRate??"—"}%</b><span>Acceptance</span></div></div><div className="difficulty"><Progress label="Easy" value={totals.Easy||0} max={Math.max(1,...Object.values(totals).map(Number))}/><Progress label="Medium" value={totals.Medium||0} max={Math.max(1,...Object.values(totals).map(Number))}/><Progress label="Hard" value={totals.Hard||0} max={Math.max(1,...Object.values(totals).map(Number))}/></div><div className="rank-card"><small>Global ranking</small><b>{leetcode.ranking?.toLocaleString?.()??"—"}</b><span>{leetcode.submissions??0} total submissions</span></div></div></section>
+  <section id="projects" className="section"><div className="section-head"><div><p className="eyebrow">SELECTED WORK</p><h2>Projects</h2></div><span>{crio.live?"Live from Crio":"Resume-backed fallback"}</span></div><div className="cards">{(crio.projects||profile.fallbackProjects).map((p:any,i:number)=><motion.article className="card" key={`${p.title}-${i}`} initial={{opacity:0,y:28}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.2}}><span className="number">0{i+1}</span><h3>{p.title}</h3><small>{p.date}</small><p>{p.description}</p><div className="tags">{(p.skills||[]).slice(0,8).map((s:string)=><span key={s}>{s}</span>)}</div></motion.article>)}</div></section>
+  {github.repos?.length?<section className="section"><p className="eyebrow">LIVE GITHUB</p><h2>Recently updated repositories</h2><div className="repo-grid">{github.repos.slice(0,8).map((r:any)=><a className="repo" href={r.url} target="_blank" key={r.name}><div className="repo-top"><b>{r.name}</b><ExternalLink size={15}/></div><p>{r.description||"No description provided."}</p><div className="repo-meta"><span>{r.language||"Code"}</span><span><Star size={13}/>{r.stars}</span><span><GitFork size={13}/>{r.forks}</span></div></a>)}</div></section>:null}
+  <section id="experience" className="section"><p className="eyebrow">CAREER</p><h2>Experience</h2><div className="timeline">{profile.experience.map(e=><article key={e.company}><div className="dot"/><small>{e.period}</small><h3>{e.role}</h3><h4>{e.company}</h4>{e.points.map(p=><p key={p}>{p}</p>)}</article>)}</div></section>
+  <section className="section resume-cloud"><div><p className="eyebrow">CLOUD RESUME</p><h2>Always-current professional profile</h2><p>Set <code>RESUME_URL</code> in Vercel to a public PDF URL from Google Drive, OneDrive, Dropbox, or another cloud host. The website will use that URL without changing application code.</p></div><a className="primary-button" href={config.resumeUrl} target="_blank"><Download size={18}/>Open latest resume</a></section>
+  <footer><span>© {new Date().getFullYear()} Mainak Chandra</span><div><a href={`mailto:${profile.email}`}>{profile.email}</a><a href="/sitemap.xml">Sitemap</a></div></footer>
+  <button className="chat-launch" aria-label="Open portfolio assistant" onClick={()=>setChat(true)}><MessageCircle/></button>
+  <AnimatePresence>{chat&&<motion.aside className="chat" initial={{opacity:0,y:30,scale:.95}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:20,scale:.95}}><header><div><b>Mainak AI Assistant</b><span>Resume and project grounded</span></div><button onClick={()=>setChat(false)}><X/></button></header><div className="chat-body">{messages.map((m,i)=><div key={i} className={`bubble ${m.role}`}>{m.text}</div>)}{thinking&&<div className="bubble assistant">Thinking…</div>}</div><div className="chat-input"><input value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")ask()}} placeholder="Ask about experience or skills"/><button onClick={ask}><Send size={18}/></button></div></motion.aside>}</AnimatePresence>
+ </main>}
+function Metric({icon,label,value,sub}:{icon:any,label:string,value:any,sub:string}){return <article>{icon}<small>{label}</small><b>{value}</b><span>{sub}</span></article>}
+function Skill({title,items}:{title:string;items:string[]}){return <motion.article whileHover={{y:-5}}><h3>{title}</h3><div className="tags">{items.map(x=><span key={x}>{x}</span>)}</div></motion.article>}
+function Progress({label,value,max}:{label:string;value:number;max:number}){return <div className="progress"><div><span>{label}</span><b>{value}</b></div><i><em style={{width:`${Math.max(4,value/max*100)}%`}}/></i></div>}
+function ContributionGraph({data}:{data:any}){if(!data?.weeks)return <div className="empty-graph"><Github size={34}/><b>Enable the live contribution graph</b><p>Add a GitHub personal access token as <code>GITHUB_TOKEN</code> in Vercel, then redeploy.</p></div>;return <div className="contribution-wrap"><div className="contribution-grid">{data.weeks.flatMap((w:any)=>w.contributionDays).map((d:any)=><i key={d.date} title={`${d.date}: ${d.contributionCount} contributions`} data-level={Math.min(4,d.contributionCount)}/>)}</div><div className="legend"><span>Less</span>{[0,1,2,3,4].map(x=><i key={x} data-level={x}/>)}<span>More</span></div></div>}
