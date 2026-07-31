@@ -8,3 +8,17 @@
 .project-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 .project-links a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.14);padding:8px 11px;border-radius:9px;font-size:.86rem}
 .project-links a:hover{border-color:#62e6ff;color:#62e6ff}
+
+.projects-section .section-head{align-items:flex-start}
+.section-intro{max-width:760px;color:var(--muted);line-height:1.7;margin:-22px 0 34px}
+.project-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+.project-card{min-height:0;padding:30px;display:flex;flex-direction:column}
+.project-card h3{font-size:28px;margin:22px 0 12px}
+.project-card-top{align-items:flex-start}
+.project-meta{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}
+.project-meta span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(34,211,238,.22);border-radius:999px;padding:5px 8px}
+.project-description{margin:0 0 22px;font-size:15px;line-height:1.75;white-space:pre-line}
+.project-subheading{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.project-links{margin-top:auto;padding-top:22px}
+.sync-warning{border-left:3px solid var(--cyan);padding:10px 14px;color:var(--muted);background:rgba(34,211,238,.05);border-radius:0 8px 8px 0;margin:-20px 0 28px}
+@media(max-width:780px){.project-cards{grid-template-columns:1fr}.section-intro{margin-top:-18px}.project-meta{justify-content:flex-start}.project-card-top{display:block}.project-card-top .number{display:block;margin-bottom:12px}}

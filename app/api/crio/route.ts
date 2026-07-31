@@ -12,6 +12,7 @@ type CrioProject = {
   category: "Professional Project" | "Mini Project";
   detailsUrl?: string;
   demoUrl?: string;
+  source?: "Crio" | "Resume" | "Crio + Resume";
 };
 
 const normalise = (value = "") => value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
@@ -133,14 +134,57 @@ function extractProjectsFromEmbeddedJson(html: string, sourceUrl: string): CrioP
   return projects;
 }
 
-function deduplicate(projects: CrioProject[]) {
+function projectKey(title: string) {
+  const cleaned = normalise(title)
+    .toLowerCase()
+    .replace(/\b(qa|automation|automated|project|professional|mini|application)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return cleaned.replace(/\s+/g, "") || title.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function mergeProjectRecords(primary: CrioProject, secondary: CrioProject): CrioProject {
+  const descriptions = [primary.description, secondary.description].filter(Boolean);
+  const date = [primary.date, secondary.date].find(v => v && !/^crio$/i.test(v)) || "Crio";
+  const source = primary.source === secondary.source
+    ? primary.source
+    : "Crio + Resume";
+
+  return {
+    ...secondary,
+    ...primary,
+    title: primary.title || secondary.title,
+    description: descriptions.sort((a, b) => b.length - a.length)[0] || "Project details are available in the portfolio.",
+    skills: unique([...(primary.skills || []), ...(secondary.skills || [])]).slice(0, 24),
+    date,
+    category: primary.category || secondary.category,
+    detailsUrl: primary.detailsUrl || secondary.detailsUrl,
+    demoUrl: primary.demoUrl || secondary.demoUrl,
+    source
+  };
+}
+
+function combineCrioAndResume(crioProjects: CrioProject[]) {
   const map = new Map<string, CrioProject>();
-  for (const project of projects) {
-    const key = project.title.toLowerCase().replace(/[^a-z0-9]+/g, "");
-    if (!key || key.length < 3) continue;
+
+  for (const project of crioProjects) {
+    const prepared = { ...project, source: "Crio" as const };
+    const key = projectKey(prepared.title);
     const existing = map.get(key);
-    if (!existing || project.description.length > existing.description.length) map.set(key, project);
+    map.set(key, existing ? mergeProjectRecords(prepared, existing) : prepared);
   }
+
+  for (const project of profile.fallbackProjects) {
+    const prepared: CrioProject = {
+      ...project,
+      category: "Professional Project",
+      source: "Resume"
+    };
+    const key = projectKey(prepared.title);
+    const existing = map.get(key);
+    map.set(key, existing ? mergeProjectRecords(existing, prepared) : prepared);
+  }
+
   return [...map.values()];
 }
 
@@ -158,24 +202,27 @@ export async function GET() {
     if (!response.ok) throw new Error(`Crio request failed with ${response.status}`);
 
     const html = await response.text();
-    const projects = deduplicate([
-      ...extractProjectsFromEmbeddedJson(html, url),
-      ...extractProjectsFromDom(html, url)
-    ]);
+    const crioProjects = extractProjectsFromEmbeddedJson(html, url)
+      .concat(extractProjectsFromDom(html, url));
+    const projects = combineCrioAndResume(crioProjects);
 
     return NextResponse.json({
       source: url,
-      projects: projects.length ? projects : profile.fallbackProjects,
+      projects,
       projectCount: projects.length,
-      live: projects.length > 0,
+      crioProjectCount: crioProjects.length,
+      resumeProjectCount: profile.fallbackProjects.length,
+      live: crioProjects.length > 0,
       syncedAt: new Date().toISOString(),
-      warning: projects.length ? undefined : "Crio returned a page, but no project cards could be extracted. Showing resume-backed projects."
+      warning: crioProjects.length ? undefined : "Crio returned a page, but no project cards could be extracted. Showing projects from the resume."
     });
   } catch (error) {
     return NextResponse.json({
       source: url,
-      projects: profile.fallbackProjects,
-      projectCount: 0,
+      projects: combineCrioAndResume([]),
+      projectCount: profile.fallbackProjects.length,
+      crioProjectCount: 0,
+      resumeProjectCount: profile.fallbackProjects.length,
       live: false,
       syncedAt: new Date().toISOString(),
       warning: "Showing resume-backed projects because Crio blocked or failed automated retrieval.",
