@@ -10,6 +10,7 @@ import {
   Sparkles, Sun, Terminal, TestTube2, Users, X, Zap
 } from "lucide-react";
 import { profile } from "@/lib/profile";
+import ConstellationBackground from "./ConstellationBackground";
 
 const Scene = dynamic(() => import("./Scene"), { ssr: false });
 type AnyData = Record<string, any>;
@@ -227,6 +228,7 @@ export default function Portfolio() {
   const navItems = ["About", "Skills", "Experience", "Projects", "Certifications", "Contact"];
 
   return <main>
+    <ConstellationBackground/>
     <nav className="nav glass">
       <a className="brand" href="#top" aria-label="Mainak Chandra home">MC<span>.</span></a>
       <div className="navlinks">{navItems.map(x => <a key={x} href={`#${x.toLowerCase()}`}>{x}</a>)}</div>

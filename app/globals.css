@@ -19,3 +19,43 @@
 .project-technologies+.project-links{margin-top:0}
 .project-card:has(.featured-ribbon){border-color:rgba(245,190,70,.22)}
 .project-card:has(.featured-ribbon):hover{border-color:rgba(245,190,70,.55)}
+
+/* Global interactive constellation background */
+.constellation-background{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  opacity:.88;
+  mix-blend-mode:screen;
+}
+html[data-theme="light"] .constellation-background{
+  opacity:.52;
+  mix-blend-mode:multiply;
+}
+body{isolation:isolate}
+main{position:relative;z-index:1}
+main>section,main>footer{position:relative;z-index:1}
+.nav,.mobile-nav,.chat,.chat-launch{z-index:60}
+.hero:before{
+  content:"";
+  position:absolute;
+  inset:6% 0 auto 52%;
+  width:min(48vw,680px);
+  aspect-ratio:1;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(86,224,211,.10),rgba(139,124,255,.04) 42%,transparent 72%);
+  filter:blur(20px);
+  pointer-events:none;
+  z-index:0;
+}
+.hero>*{position:relative;z-index:1}
+@media(max-width:650px){
+  .constellation-background{opacity:.5}
+  .hero:before{inset:10% -25% auto 35%;width:90vw}
+}
+@media(prefers-reduced-motion:reduce){
+  .constellation-background{opacity:.35}
+}
