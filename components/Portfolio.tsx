@@ -44,7 +44,7 @@ const reveal = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0
 export default function Portfolio() {
   const [github, setGithub] = useState<AnyData>({});
   const [leetcode, setLeetcode] = useState<AnyData>({});
-  const [crio, setCrio] = useState<AnyData>({ projects: profile.fallbackProjects });
+  const [crio, setCrio] = useState<AnyData>({ projects: [...profile.crioFallbackProjects, ...profile.fallbackProjects] });
   const [config, setConfig] = useState<AnyData>({ resumeUrl: profile.links.resume });
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mobileNav, setMobileNav] = useState(false);
@@ -102,8 +102,8 @@ export default function Portfolio() {
 
   const totals = useMemo(() => Object.fromEntries((leetcode.breakdown || []).map((x: any) => [x.difficulty, x.count])), [leetcode]);
   const allProjects = useMemo(() => {
-    const source = Array.isArray(crio.projects) ? crio.projects : profile.fallbackProjects;
-    return source.filter(isSafeProjectRecord);
+    const source = Array.isArray(crio.projects) ? crio.projects : [...profile.crioFallbackProjects, ...profile.fallbackProjects];
+    return source.filter(isSafeProjectRecord).sort((a: any, b: any) => Number(isFeaturedProject(b.title)) - Number(isFeaturedProject(a.title)));
   }, [crio.projects]);
   const projectFilters = ["All", "Featured", "Professional", "Mini", "Java", "Selenium", "AWS", "AI"];
   const filteredProjects = useMemo(() => allProjects.filter((p: any) => {
@@ -206,9 +206,11 @@ export default function Portfolio() {
         const primaryUrl = p.detailsUrl || p.githubUrl || p.demoUrl;
         return <motion.article className={`project-card glass${primaryUrl ? " clickable" : ""}`} key={`${p.title}-${i}`} {...reveal} onClick={() => primaryUrl && window.open(primaryUrl, "_blank", "noopener,noreferrer")}> 
           <div className="project-card-head"><span className="number">{String(i+1).padStart(2,"0")}</span><span className="project-type">{p.category || "Professional Project"}</span></div>
+          {isFeaturedProject(p.title) && <span className="featured-ribbon"><Sparkles size={13}/> Featured Project</span>}
           <h3>{p.title}</h3>{p.date && <p className="project-date">{p.date}</p>}
           <p className="project-description">{p.description || "Project details are available in the portfolio."}</p>
-          <div className="tags">{(p.skills || []).slice(0,12).map((skill: string) => <span key={skill}>{skill}</span>)}</div>
+          {Array.isArray(p.scope) && p.scope.length > 0 && <div className="project-scope"><h4>Scope of work</h4><ul>{p.scope.map((item: string) => <li key={item}><CheckCircle2 size={14}/><span>{item}</span></li>)}</ul></div>}
+          <div className="project-technologies"><h4>Technologies used</h4><div className="tags">{(p.skills || []).slice(0,14).map((skill: string) => <span key={skill}>{skill}</span>)}</div></div>
           <div className="project-links">
             {p.githubUrl && <a href={p.githubUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}><Github size={15}/> GitHub</a>}
             {p.demoUrl && <a href={p.demoUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}><Globe2 size={15}/> Live demo</a>}
@@ -249,4 +251,4 @@ function Metric({icon,label,value,sub}:{icon:React.ReactNode,label:string,value:
 function SkillCard({icon,title,items}:{icon:React.ReactNode,title:string,items:string[]}){return <motion.article className="skill-card glass" {...reveal}><div className="skill-icon">{icon}</div><h3>{title}</h3><div className="skill-list">{items.map(x=><span key={x}>{x}</span>)}</div></motion.article>}
 function Progress({label,value,max}:{label:string,value:number,max:number}){return <div className="progress"><div><span>{label}</span><b>{value}</b></div><div className="track"><span style={{width:`${Math.max(4,(value/max)*100)}%`}}/></div></div>}
 function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="graph-empty"><Github size={28}/><p>Contribution data will appear here after the GitHub token is configured.</p></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${Math.min(4,d.contributionLevel||0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
-function isFeaturedProject(title:string){return /qkart|qtrip|flipkart|parking/i.test(title||"")}
+function isFeaturedProject(title:string){return /^(qtrip qa|qcalc|amazon store automation|flipkart automation|leetcode automation|youtube automation)$/i.test((title||"").trim())}

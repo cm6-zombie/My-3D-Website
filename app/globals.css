@@ -6,3 +6,16 @@
 @media(max-width:980px){.nav-email span{display:none}.nav-email{width:38px;height:38px;padding:0;justify-content:center}}
 @media(max-width:650px){.nav{top:10px;width:calc(100% - 20px)}.nav-resume{display:none}.hero{padding:120px 18px 60px;min-height:auto}.hero h1{font-size:48px}.scene-wrap{height:390px;margin-top:15px}.scene{inset:0}.floating-card{display:none}.trust-strip{margin-top:35px;padding:22px 18px}.trust-strip div{justify-content:flex-start}.section{padding:78px 18px}.section h2{font-size:36px}.metrics{padding:0 18px;grid-template-columns:1fr}.skill-category-grid,.credential-grid{grid-template-columns:1fr}.timeline:before{left:20px}.timeline-item{grid-template-columns:42px 1fr;gap:14px}.timeline-marker{width:42px;height:42px}.timeline-card{padding:20px}.timeline-top{display:block}.period{display:block;margin-top:10px}.project-card{padding:22px}.project-filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}.project-filters button{white-space:nowrap}.leetcode-panel{grid-template-columns:1fr}.donut{margin:auto}.rank{grid-column:auto;display:grid;text-align:center}.contact-card{padding:30px 22px}.contact-actions{display:grid}.chat-launch span{display:none}.chat-launch{width:50px;height:50px;padding:0;justify-content:center}footer{display:grid;gap:24px}footer>div:last-child{flex-wrap:wrap}.graph-caption{display:grid;gap:10px}.social-row{gap:13px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* Project detail and featured-project enhancements */
+.project-card{position:relative;overflow:hidden}
+.featured-ribbon{display:inline-flex;align-items:center;gap:6px;width:max-content;margin-top:18px;padding:7px 10px;border-radius:999px;border:1px solid rgba(245,190,70,.38);background:rgba(245,190,70,.10);color:#f5be46;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.project-scope{margin:0 0 22px;padding:18px;border:1px solid var(--line);border-radius:15px;background:rgba(128,140,158,.045)}
+.project-scope h4,.project-technologies h4{margin:0 0 11px;font:700 12px 'Manrope';letter-spacing:.08em;text-transform:uppercase;color:var(--text)}
+.project-scope ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.project-scope li{display:flex;gap:8px;color:var(--muted);font-size:12px;line-height:1.55}
+.project-scope li svg{flex:0 0 auto;margin-top:2px;color:var(--accent)}
+.project-technologies{margin-top:auto}
+.project-technologies+.project-links{margin-top:0}
+.project-card:has(.featured-ribbon){border-color:rgba(245,190,70,.22)}
+.project-card:has(.featured-ribbon):hover{border-color:rgba(245,190,70,.55)}

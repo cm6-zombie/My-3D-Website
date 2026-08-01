@@ -8,6 +8,8 @@ type CrioProject = {
   title: string;
   description: string;
   skills: string[];
+  scope?: string[];
+  featured?: boolean;
   date: string;
   category: "Professional Project" | "Mini Project";
   detailsUrl?: string;
@@ -56,6 +58,7 @@ function isValidProject(project: CrioProject): boolean {
   const description = normalise(project.description);
 
   if (title.length < 2 || title.length > 120) return false;
+  if (/ci\/?cd pipeline with jenkins|test automation with apache poi|whatsapp automation/i.test(title)) return false;
   if (looksLikeCss(title)) return false;
   if (/^(about|skills|experience|projects|certifications|contact|portfolio)$/i.test(title)) return false;
   if (description && looksLikeCss(description)) return false;
@@ -200,6 +203,8 @@ function mergeProjectRecords(primary: CrioProject, secondary: CrioProject): Crio
     title: primary.title || secondary.title,
     description: descriptions[0] || "Project details are available in the Crio portfolio.",
     skills: unique([...(primary.skills || []), ...(secondary.skills || [])]).slice(0, 24),
+    scope: primary.scope?.length ? primary.scope : secondary.scope,
+    featured: primary.featured ?? secondary.featured,
     date: [primary.date, secondary.date].find((value) => value && !/^crio$/i.test(value)) || "Crio",
     category: primary.category || secondary.category,
     detailsUrl: primary.detailsUrl || secondary.detailsUrl,
@@ -232,6 +237,10 @@ function parseConfiguredProjects(): CrioProject[] {
             )
           : [];
 
+        const scope: string[] = Array.isArray(project.scope)
+          ? project.scope.map((item: unknown) => normalise(String(item))).filter(Boolean)
+          : [];
+
         const optionalUrl = (value: unknown): string | undefined =>
           typeof value === "string" && value.trim() ? value.trim() : undefined;
 
@@ -239,6 +248,8 @@ function parseConfiguredProjects(): CrioProject[] {
           title,
           description: normalise(String(project.description || project.summary || "")),
           skills,
+          scope,
+          featured: project.featured === true,
           date: normalise(String(project.date || "Crio")),
           category: /mini/i.test(String(project.category || ""))
             ? "Mini Project"
