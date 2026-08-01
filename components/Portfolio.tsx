@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Award, BarChart3, BriefcaseBusiness, CheckCircle2, ChevronRight,
   Cloud, Code2, Database, Download, ExternalLink, Github, Globe2, Layers3,
-  Mail, Menu, MessageCircle, Moon, RefreshCw, Search, Send, Server, ShieldCheck,
+  Mail, Menu, MessageCircle, Moon, Search, Send, Server, ShieldCheck,
   Sparkles, Sun, Terminal, TestTube2, Users, X, Zap
 } from "lucide-react";
 import { profile } from "@/lib/profile";
@@ -21,7 +21,6 @@ export default function Portfolio() {
   const [leetcode, setLeetcode] = useState<AnyData>({});
   const [crio, setCrio] = useState<AnyData>({ projects: profile.fallbackProjects });
   const [config, setConfig] = useState<AnyData>({ resumeUrl: profile.links.resume });
-  const [updated, setUpdated] = useState<Date | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mobileNav, setMobileNav] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -43,7 +42,6 @@ export default function Portfolio() {
     if (results[1].status === "fulfilled") setLeetcode(results[1].value);
     if (results[2].status === "fulfilled") setCrio(results[2].value);
     if (results[3].status === "fulfilled") setConfig(results[3].value);
-    setUpdated(new Date());
   }
 
   useEffect(() => {
@@ -121,7 +119,6 @@ export default function Portfolio() {
           <a href={profile.links.github} target="_blank" rel="noreferrer"><Github size={17}/> GitHub</a>
           <a href={profile.links.leetcode} target="_blank" rel="noreferrer"><Code2 size={17}/> LeetCode</a>
           <a href={profile.links.crio} target="_blank" rel="noreferrer"><Globe2 size={17}/> Crio</a>
-          <button onClick={load}><RefreshCw size={15}/>{updated ? `Synced ${updated.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}` : "Syncing"}</button>
         </div>
       </motion.div>
       <motion.div className="scene-wrap" initial={{opacity:0,scale:.86}} animate={{opacity:1,scale:1}} transition={{duration:1}}>
