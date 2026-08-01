@@ -41,6 +41,92 @@ function isSafeProjectRecord(project: AnyData): boolean {
 
 const reveal = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.16 }, transition: { duration: 0.55 } };
 
+const SKILL_ALIASES: Record<string, string> = {
+  "selenium": "Selenium WebDriver",
+  "selenium webdriver": "Selenium WebDriver",
+  "pom": "Page Object Model",
+  "page object model (pom)": "Page Object Model",
+  "oop": "Object-Oriented Programming",
+  "object oriented programming": "Object-Oriented Programming",
+  "object-oriented programming (oop)": "Object-Oriented Programming",
+  "xpath": "XPath",
+  "dynamic xpath": "Dynamic XPath",
+  "explicit wait": "Explicit Waits",
+  "implicit wait": "Implicit Waits",
+  "fluent wait": "Fluent Waits",
+  "waits": "Wait Strategies",
+  "javascript executor": "JavaScript Executor",
+  "js executor": "JavaScript Executor",
+  "webdrivermanager": "WebDriverManager",
+  "data driven testing": "Data-Driven Testing",
+  "data-driven testing": "Data-Driven Testing",
+  "end to end testing": "End-to-End Testing",
+  "end-to-end testing": "End-to-End Testing",
+  "ui automation": "UI Testing",
+  "ms sql server": "Microsoft SQL Server",
+  "sql server": "Microsoft SQL Server"
+};
+
+function cleanSkill(value: unknown): string | null {
+  const raw = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!raw || raw.length > 60) return null;
+  const lower = raw.toLowerCase();
+  if ([".css-", "--chakra-", "-webkit-", "display:", "background:", "{" , "}"].some(signal => lower.includes(signal))) return null;
+  return SKILL_ALIASES[lower] || raw;
+}
+
+function mergeUniqueSkills(base: string[], discovered: string[]): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const value of [...base, ...discovered]) {
+    const skill = cleanSkill(value);
+    if (!skill) continue;
+    const key = skill.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(skill);
+    }
+  }
+  return result;
+}
+
+function classifyCrioSkills(projects: AnyData[]) {
+  const categories: Record<string, string[]> = {
+    qa: [], programming: [], cloud: [], operations: [], webAutomation: [], softwareEngineering: []
+  };
+
+  const push = (category: keyof typeof categories, skill: string) => categories[category].push(skill);
+
+  for (const project of projects) {
+    for (const rawSkill of Array.isArray(project?.skills) ? project.skills : []) {
+      const skill = cleanSkill(rawSkill);
+      if (!skill) continue;
+      const lower = skill.toLowerCase();
+
+      if (/window handling|frame|alert|actions class|javascript executor|dynamic date|dynamic time/.test(lower)) {
+        push("webAutomation", skill);
+      } else if (/object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) {
+        push("softwareEngineering", skill);
+      } else if (/selenium|testng|junit|page object|page factory|data-driven|functional testing|regression|smoke testing|ui testing|end-to-end|cross-browser|assertion|extent report|webdriver|apache poi|test listener|xpath|wait|dynamic element/.test(lower)) {
+        push("qa", skill);
+      } else if (/java|javascript|typescript|sql|mysql|microsoft sql|git|github|gradle|maven|json|rest api/.test(lower)) {
+        push("programming", skill);
+      } else if (/aws|ec2|iam|cloudwatch|cloudformation|terraform|ansible|s3|vpc|linux/.test(lower)) {
+        push("cloud", skill);
+      } else if (/servicenow|incident|problem management|rca|sla|release|lms|hrms|data migration|audit|sop/.test(lower)) {
+        push("operations", skill);
+      }
+      // Unknown labels are intentionally ignored so project metadata does not
+      // pollute the public Skills section with non-technology terms.
+
+    }
+  }
+
+  return Object.fromEntries(
+    Object.entries(categories).map(([key, values]) => [key, mergeUniqueSkills([], values)])
+  ) as Record<keyof typeof categories, string[]>;
+}
+
 export default function Portfolio() {
   const [github, setGithub] = useState<AnyData>({});
   const [leetcode, setLeetcode] = useState<AnyData>({});
@@ -105,6 +191,27 @@ export default function Portfolio() {
     const source = Array.isArray(crio.projects) ? crio.projects : [...profile.crioFallbackProjects, ...profile.fallbackProjects];
     return source.filter(isSafeProjectRecord).sort((a: any, b: any) => Number(isFeaturedProject(b.title)) - Number(isFeaturedProject(a.title)));
   }, [crio.projects]);
+  const crioSkillCategories = useMemo(() => classifyCrioSkills(allProjects), [allProjects]);
+  const displayedSkills = useMemo(() => ({
+    qa: mergeUniqueSkills(
+      ["Selenium WebDriver","TestNG","Page Object Model","Data-Driven Testing","XPath","Apache POI"],
+      crioSkillCategories.qa
+    ),
+    programming: mergeUniqueSkills(
+      ["Core Java","SQL / T-SQL","MySQL","Microsoft SQL Server","Git","Gradle"],
+      crioSkillCategories.programming
+    ),
+    cloud: mergeUniqueSkills(
+      ["AWS EC2","IAM","CloudWatch","CloudFormation","Ansible","Terraform"],
+      crioSkillCategories.cloud
+    ),
+    operations: mergeUniqueSkills(
+      ["ServiceNow","Incident Management","RCA","SLA Management","Release Validation","Linux"],
+      crioSkillCategories.operations
+    ),
+    webAutomation: crioSkillCategories.webAutomation,
+    softwareEngineering: crioSkillCategories.softwareEngineering
+  }), [crioSkillCategories]);
   const projectFilters = ["All", "Featured", "Professional", "Mini", "Java", "Selenium", "AWS", "AI"];
   const filteredProjects = useMemo(() => allProjects.filter((p: any) => {
     const haystack = [p.title, p.description, p.category, ...(p.skills || [])].filter(Boolean).join(" ").toLowerCase();
@@ -176,10 +283,12 @@ export default function Portfolio() {
     <section id="skills" className="section">
       <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">CORE CAPABILITIES</p><h2>Skills built for reliable software delivery.</h2></div><p>Hands-on automation, infrastructure and support expertise—combined with the communication and ownership needed in enterprise environments.</p></motion.div>
       <div className="skill-category-grid">
-        <SkillCard icon={<TestTube2/>} title="QA Automation" items={["Selenium WebDriver","TestNG","Page Object Model","Data-driven testing","XPath","Apache POI"]}/>
-        <SkillCard icon={<Terminal/>} title="Programming & Data" items={["Core Java","SQL / T-SQL","MySQL","Microsoft SQL Server","Git","Gradle"]}/>
-        <SkillCard icon={<Cloud/>} title="Cloud & Infrastructure" items={["AWS EC2","IAM","CloudWatch","CloudFormation","Ansible","Terraform"]}/>
-        <SkillCard icon={<ShieldCheck/>} title="Operations & ITSM" items={["ServiceNow","Incident Management","RCA","SLA Management","Release Validation","Linux"]}/>
+        <SkillCard icon={<TestTube2/>} title="QA Automation" items={displayedSkills.qa}/>
+        <SkillCard icon={<Terminal/>} title="Programming & Data" items={displayedSkills.programming}/>
+        <SkillCard icon={<Cloud/>} title="Cloud & Infrastructure" items={displayedSkills.cloud}/>
+        <SkillCard icon={<ShieldCheck/>} title="Operations & ITSM" items={displayedSkills.operations}/>
+        {displayedSkills.webAutomation.length > 0 && <SkillCard icon={<Globe2/>} title="Web Automation" items={displayedSkills.webAutomation}/>} 
+        {displayedSkills.softwareEngineering.length > 0 && <SkillCard icon={<Layers3/>} title="Software Engineering" items={displayedSkills.softwareEngineering}/>} 
         <SkillCard icon={<Users/>} title="Leadership" items={profile.leadershipSkills}/>
         <SkillCard icon={<Sparkles/>} title="Professional strengths" items={profile.softSkills}/>
       </div>

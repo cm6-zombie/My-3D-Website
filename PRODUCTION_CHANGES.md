@@ -8,3 +8,11 @@ This version applies the requested project catalogue changes:
 - Added server-side filtering for those removed records and retained CSS/Chakra-content filtering.
 - Featured projects are sorted before regular projects.
 - Added production UI for Featured Project, Scope of work, and Technologies used.
+## Crio skills synchronization
+- Preserves the existing Skills card design and existing category order.
+- Extracts technology skills from synchronized Crio project records in the browser.
+- Normalizes common aliases such as Selenium/Selenium WebDriver, POM/Page Object Model, and OOP/Object-Oriented Programming.
+- Merges skills without duplicates.
+- Adds **Web Automation** and **Software Engineering** cards only when matching Crio skills exist.
+- Rejects CSS/Chakra fragments and ignores unknown non-technology labels.
+- Continues refreshing through the existing background Crio synchronization interval.
