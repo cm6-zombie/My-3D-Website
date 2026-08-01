@@ -22,6 +22,47 @@ const absoluteUrl = (href: string | undefined, base: string) => {
   try { return new URL(href, base).toString(); } catch { return undefined; }
 };
 
+
+function looksLikeCss(value: string): boolean {
+  const text = normalise(value).toLowerCase();
+  if (!text) return false;
+
+  const cssSignals = [
+    ".css-",
+    "--chakra-",
+    "-webkit-",
+    "-moz-",
+    "display:",
+    "background:",
+    "border-radius:",
+    "font-size:",
+    "align-items:",
+    "justify-content:",
+    "transition-property:",
+    "padding-inline",
+    "appearance:"
+  ];
+
+  const signalCount = cssSignals.reduce(
+    (count, signal) => count + (text.includes(signal) ? 1 : 0),
+    0
+  );
+
+  return (text.includes("{") && text.includes("}")) || signalCount >= 2;
+}
+
+function isValidProject(project: CrioProject): boolean {
+  const title = normalise(project.title);
+  const description = normalise(project.description);
+
+  if (title.length < 2 || title.length > 120) return false;
+  if (looksLikeCss(title)) return false;
+  if (/^(about|skills|experience|projects|certifications|contact|portfolio)$/i.test(title)) return false;
+  if (description && looksLikeCss(description)) return false;
+
+  return true;
+}
+
 function projectKey(title: string) {
   return normalise(title)
     .toLowerCase()
@@ -82,16 +123,18 @@ function extractProjectFromContainer($: cheerio.CheerioAPI, heading: any, source
     description = normalise(description);
   }
 
-  return {
+  const project: CrioProject = {
     title,
     description: description.slice(0, 1800),
-    skills,
+    skills: skills.filter((skill) => !looksLikeCss(skill)),
     date,
     category: inferCategory($, heading, container),
     detailsUrl,
     demoUrl,
     githubUrl
   };
+
+  return isValidProject(project) ? project : null;
 }
 
 function extractProjectsFromDom(html: string, sourceUrl: string): CrioProject[] {
@@ -124,16 +167,18 @@ function walkJson(value: unknown, sourceUrl: string, result: CrioProject[]) {
     : [];
 
   if (title && (description || skills.length) && !/portfolio|skills acquired|github contributions/i.test(title)) {
-    result.push({
+    const project: CrioProject = {
       title,
       description: description.slice(0, 1800),
-      skills: skills.slice(0, 24),
+      skills: skills.filter((skill) => !looksLikeCss(skill)).slice(0, 24),
       date: normalise(String(object.date || object.duration || object.timeline || object.completedAt || "Crio")),
       category: /mini/i.test(String(object.type || object.category || "")) ? "Mini Project" : "Professional Project",
       detailsUrl: absoluteUrl(String(object.detailsUrl || object.projectUrl || object.url || ""), sourceUrl),
       demoUrl: absoluteUrl(String(object.demoUrl || object.liveUrl || ""), sourceUrl),
       githubUrl: absoluteUrl(String(object.githubUrl || object.repositoryUrl || object.repoUrl || ""), sourceUrl)
-    });
+    };
+
+    if (isValidProject(project)) result.push(project);
   }
   Object.values(object).forEach((item) => walkJson(item, sourceUrl, result));
 }
@@ -203,7 +248,7 @@ function parseConfiguredProjects(): CrioProject[] {
           githubUrl: optionalUrl(project.githubUrl)
         };
       })
-      .filter((project): project is CrioProject => project !== null);
+      .filter((project): project is CrioProject => project !== null && isValidProject(project));
   } catch {
     return [];
   }
@@ -211,8 +256,9 @@ function parseConfiguredProjects(): CrioProject[] {
 
 function mergeAll(projectLists: CrioProject[][]) {
   const map = new Map<string, CrioProject>();
-  projectLists.flat().forEach((project) => {
+  projectLists.flat().filter(isValidProject).forEach((project) => {
     const key = projectKey(project.title);
+    if (!key) return;
     const existing = map.get(key);
     map.set(key, existing ? mergeProjectRecords(project, existing) : project);
   });

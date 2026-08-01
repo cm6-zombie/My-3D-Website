@@ -14,6 +14,31 @@ import { profile } from "@/lib/profile";
 const Scene = dynamic(() => import("./Scene"), { ssr: false });
 type AnyData = Record<string, any>;
 
+function isSafeProjectRecord(project: AnyData): boolean {
+  const title = String(project?.title || "").trim();
+  const description = String(project?.description || "").trim();
+  const combined = `${title} ${description}`.toLowerCase();
+
+  if (title.length < 2 || title.length > 120) return false;
+
+  const cssSignals = [
+    ".css-", "--chakra-", "-webkit-", "-moz-", "display:",
+    "background:", "border-radius:", "font-size:", "align-items:",
+    "justify-content:", "transition-property:", "padding-inline",
+    "appearance:"
+  ];
+
+  const signalCount = cssSignals.reduce(
+    (count, signal) => count + (combined.includes(signal) ? 1 : 0),
+    0
+  );
+
+  if ((combined.includes("{") && combined.includes("}")) || signalCount >= 2) return false;
+  if (/^(about|skills|experience|projects|certifications|contact|portfolio)$/i.test(title)) return false;
+
+  return true;
+}
+
 const reveal = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.16 }, transition: { duration: 0.55 } };
 
 export default function Portfolio() {
@@ -76,7 +101,10 @@ export default function Portfolio() {
   }
 
   const totals = useMemo(() => Object.fromEntries((leetcode.breakdown || []).map((x: any) => [x.difficulty, x.count])), [leetcode]);
-  const allProjects = useMemo(() => crio.projects || profile.fallbackProjects, [crio.projects]);
+  const allProjects = useMemo(() => {
+    const source = Array.isArray(crio.projects) ? crio.projects : profile.fallbackProjects;
+    return source.filter(isSafeProjectRecord);
+  }, [crio.projects]);
   const projectFilters = ["All", "Featured", "Professional", "Mini", "Java", "Selenium", "AWS", "AI"];
   const filteredProjects = useMemo(() => allProjects.filter((p: any) => {
     const haystack = [p.title, p.description, p.category, ...(p.skills || [])].filter(Boolean).join(" ").toLowerCase();
