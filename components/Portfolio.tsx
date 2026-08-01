@@ -98,12 +98,13 @@ export default function Portfolio() {
       <a className="brand" href="#top" aria-label="Mainak Chandra home">MC<span>.</span></a>
       <div className="navlinks">{navItems.map(x => <a key={x} href={`#${x.toLowerCase()}`}>{x}</a>)}</div>
       <div className="nav-actions">
+        <a className="nav-email" href={`mailto:${profile.email}`} aria-label={`Email ${profile.name}`}><Mail size={16}/><span>{profile.email}</span></a>
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle colour theme">{theme === "dark" ? <Sun size={18}/> : <Moon size={18}/>}</button>
         <a className="nav-resume" href={config.resumeUrl} target="_blank" rel="noreferrer">Resume <ArrowRight size={15}/></a>
         <button className="icon-button mobile-menu" onClick={() => setMobileNav(v => !v)} aria-label="Open navigation"><Menu size={20}/></button>
       </div>
     </nav>
-    <AnimatePresence>{mobileNav && <motion.div className="mobile-nav glass" initial={{opacity:0,y:-12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}}>{navItems.map(x => <a key={x} onClick={() => setMobileNav(false)} href={`#${x.toLowerCase()}`}>{x}<ChevronRight size={16}/></a>)}</motion.div>}</AnimatePresence>
+    <AnimatePresence>{mobileNav && <motion.div className="mobile-nav glass" initial={{opacity:0,y:-12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}}>{navItems.map(x => <a key={x} onClick={() => setMobileNav(false)} href={`#${x.toLowerCase()}`}>{x}<ChevronRight size={16}/></a>)}<a className="mobile-email" onClick={() => setMobileNav(false)} href={`mailto:${profile.email}`}><span><Mail size={16}/> {profile.email}</span><ChevronRight size={16}/></a></motion.div>}</AnimatePresence>
 
     <section id="top" className="hero">
       <motion.div className="hero-copy" initial={{opacity:0,x:-42}} animate={{opacity:1,x:0}} transition={{duration:.8}}>
@@ -213,7 +214,7 @@ export default function Portfolio() {
       </motion.div>
     </section>
 
-    <footer><div><a className="brand" href="#top">MC<span>.</span></a><p>Designed and built as a dynamic portfolio for Mainak Chandra.</p></div><div><a href={profile.links.github} target="_blank" rel="noreferrer">GitHub</a><a href={profile.links.leetcode} target="_blank" rel="noreferrer">LeetCode</a><a href={profile.links.crio} target="_blank" rel="noreferrer">Crio</a><a href={`mailto:${profile.email}`}>Email</a></div></footer>
+    <footer><div><a className="brand" href="#top">MC<span>.</span></a><a className="footer-email" href={`mailto:${profile.email}`}><Mail size={16}/><span>{profile.email}</span></a><p>© 2026 Mainak Chandra. All Rights Reserved.</p></div><div><a href={profile.links.github} target="_blank" rel="noreferrer">GitHub</a><a href={profile.links.leetcode} target="_blank" rel="noreferrer">LeetCode</a><a href={profile.links.crio} target="_blank" rel="noreferrer">Crio</a></div></footer>
 
     <button className="chat-launch" onClick={() => setChat(v => !v)} aria-label="Open portfolio assistant">{chat ? <X/> : <MessageCircle/>}<span>Ask AI</span></button>
     <AnimatePresence>{chat && <motion.aside className="chat glass" initial={{opacity:0,y:18,scale:.96}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:18,scale:.96}}><div className="chat-head"><div><Sparkles size={18}/><span>Portfolio assistant</span></div><button onClick={() => setChat(false)}><X size={18}/></button></div><div className="chat-messages">{messages.map((m,i)=><div key={i} className={m.role}>{m.text}</div>)}{thinking&&<div className="assistant">Thinking…</div>}</div><div className="chat-input"><input value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>e.key==="Enter"&&ask()} placeholder="Ask about experience or skills"/><button onClick={ask}><Send size={17}/></button></div></motion.aside>}</AnimatePresence>
