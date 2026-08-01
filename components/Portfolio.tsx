@@ -170,7 +170,6 @@ export default function Portfolio() {
 
     <section id="projects" className="section projects-section">
       <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">SELECTED WORK</p><h2>Projects</h2></div><p>Projects synchronized from Crio and the résumé, with duplicates merged into one clean record.</p></motion.div>
-      {crio.warning && <p className="sync-warning">{crio.warning}</p>}
       <div className="project-toolbar">
         <label className="project-search"><Search size={17}/><input value={projectSearch} onChange={e => setProjectSearch(e.target.value)} placeholder="Search projects or technologies" aria-label="Search projects"/></label>
         <div className="project-filters">{projectFilters.map(filter => <button key={filter} className={projectFilter === filter ? "active" : ""} onClick={() => setProjectFilter(filter)}>{filter}</button>)}</div>

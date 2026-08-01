@@ -13,7 +13,6 @@ type CrioProject = {
   detailsUrl?: string;
   demoUrl?: string;
   githubUrl?: string;
-  source?: "Crio" | "Resume" | "Crio + Resume";
 };
 
 const normalise = (value = "") => value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
@@ -23,178 +22,187 @@ const absoluteUrl = (href: string | undefined, base: string) => {
   try { return new URL(href, base).toString(); } catch { return undefined; }
 };
 
+function projectKey(title: string) {
+  return normalise(title)
+    .toLowerCase()
+    .replace(/\b(qa|automation|automated|project|professional|mini|application)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, "") || title.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
 function isProjectHeading(text: string) {
   const value = normalise(text);
-  return value && !/^(My Projects|Mini Projects|Skills Acquired|GitHub Contributions|Get in touch)$/i.test(value);
+  return Boolean(value) && !/^(My Projects|Mini Projects|Skills Acquired|GitHub Contributions|Get in touch|Overview)$/i.test(value);
+}
+
+function inferCategory($: cheerio.CheerioAPI, heading: any, container: any): CrioProject["category"] {
+  const priorHeadings = $(heading).prevAll("h1,h2,h3,h4").map((_, node) => normalise($(node).text())).get();
+  if (priorHeadings.some((text) => /^Mini Projects$/i.test(text))) return "Mini Project";
+  const nearby = normalise(container.parent().text().slice(0, 160));
+  return /mini projects/i.test(nearby) ? "Mini Project" : "Professional Project";
+}
+
+function extractProjectFromContainer($: cheerio.CheerioAPI, heading: any, sourceUrl: string): CrioProject | null {
+  const title = normalise($(heading).text());
+  if (!isProjectHeading(title)) return null;
+
+  let container = $(heading).closest("article, li, section, [class*='project-card'], [class*='ProjectCard'], [class*='projectItem'], [class*='project-item'], [class*='card']");
+  if (!container.length) container = $(heading).parent();
+  if (!container.length) return null;
+
+  const links = container.find("a[href]").map((_, a) => ({
+    text: normalise($(a).text()),
+    href: absoluteUrl($(a).attr("href"), sourceUrl)
+  })).get();
+
+  const detailsUrl = links.find((link) => /project details|view details/i.test(link.text))?.href;
+  const demoUrl = links.find((link) => /view demo|live demo/i.test(link.text))?.href;
+  const githubUrl = links.find((link) => /github/i.test(link.text) || /github\.com/i.test(link.href || ""))?.href;
+
+  const allText = normalise(container.text());
+  const date = normalise(
+    container.find("time, [class*='date'], [class*='duration']").first().text() ||
+    allText.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*(?:-|–|to)?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?[a-z]*\s*\d{4}/i)?.[0] ||
+    "Crio"
+  );
+
+  const altSkills = container.find("img[alt]").map((_, img) => normalise($(img).attr("alt") || "")).get();
+  const chipSkills = container.find("[class*='skill'], [class*='tag'], [class*='chip'], [class*='badge']")
+    .map((_, node) => normalise($(node).text())).get();
+  const skills = unique([...altSkills, ...chipSkills])
+    .filter((skill) => skill && skill.length <= 48 && !/image|project|view|details|demo|professional|mini/i.test(skill))
+    .slice(0, 24);
+
+  const paragraphs = container.find("p, li").map((_, node) => normalise($(node).text())).get()
+    .filter((text) => text && text !== title && text !== date && !skills.includes(text) && !/view project details|view demo/i.test(text));
+  let description = normalise(paragraphs.join(" "));
+  if (!description) {
+    description = allText.replace(title, "").replace(date, "")
+      .replace(/View Project Details|View Details|View Demo|Live Demo/gi, "");
+    skills.forEach((skill) => { description = description.replaceAll(skill, ""); });
+    description = normalise(description);
+  }
+
+  return {
+    title,
+    description: description.slice(0, 1800),
+    skills,
+    date,
+    category: inferCategory($, heading, container),
+    detailsUrl,
+    demoUrl,
+    githubUrl
+  };
 }
 
 function extractProjectsFromDom(html: string, sourceUrl: string): CrioProject[] {
   const $ = cheerio.load(html);
   const projects: CrioProject[] = [];
+  const selectors = [
+    "h2", "h3", "h4",
+    "[class*='project'] h1", "[class*='project'] h2", "[class*='project'] h3", "[class*='project'] h4",
+    "a[href*='/learn/portfolio/']"
+  ].join(",");
 
-  // Crio has changed its markup more than once. Search all likely project title headings,
-  // then walk upward to the smallest useful card-like container.
-  $("h2, h3, h4, [class*='project'] h1, [class*='project'] h2, [class*='project'] h3").each((_, heading) => {
-    const title = normalise($(heading).text());
-    if (!isProjectHeading(title)) return;
-
-    let container = $(heading).closest("article, li, [class*='project-card'], [class*='ProjectCard'], [class*='projectItem'], [class*='project-item']");
-    if (!container.length) container = $(heading).parent();
-    if (!container.length) return;
-
-    const allText = normalise(container.text());
-    if (allText.length < title.length + 3) return;
-
-    const links = container.find("a").map((_, a) => ({
-      text: normalise($(a).text()),
-      href: absoluteUrl($(a).attr("href"), sourceUrl)
-    })).get();
-
-    const detailsUrl = links.find(l => /project details/i.test(l.text))?.href;
-    const demoUrl = links.find(l => /view demo|live demo/i.test(l.text))?.href;
-    const githubUrl = links.find(l => /github/i.test(l.text) || /github\.com/i.test(l.href || ""))?.href;
-
-    const dateCandidate = container.find("time, [class*='date'], [class*='duration']").first().text();
-    const dateFromText = allText.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*(?:-|–|to)?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?[a-z]*\s*\d{4}/i)?.[0];
-    const date = normalise(dateCandidate || dateFromText || "Crio");
-
-    const altSkills = container.find("img[alt]").map((_, img) => normalise($(img).attr("alt") || "")).get();
-    const chipSkills = container.find("[class*='skill'], [class*='tag'], [class*='chip'], [class*='badge']")
-      .map((_, node) => normalise($(node).text())).get();
-    const skills = unique([...altSkills, ...chipSkills])
-      .filter(s => s && s.length <= 45 && !/image|project|view|details|demo/i.test(s))
-      .slice(0, 20);
-
-    // Prefer paragraph/list content and remove UI labels from the fallback text.
-    const structuredDescription = container.find("p, li").map((_, node) => normalise($(node).text())).get()
-      .filter(t => t && t !== title && !skills.includes(t));
-    let description = normalise(structuredDescription.join(" "));
-    if (!description) {
-      description = allText
-        .replace(title, "")
-        .replace(date, "")
-        .replace(/View Project Details/gi, "")
-        .replace(/View Demo/gi, "");
-      for (const skill of skills) description = description.replaceAll(skill, "");
-      description = normalise(description);
-    }
-
-    const previousSection = $(heading).prevAll("h2, h3").first().text();
-    const category = /mini projects/i.test(previousSection) || container.parents().filter((_, n) => /mini projects/i.test($(n).text().slice(0, 80))).length
-      ? "Mini Project" : "Professional Project";
-
-    projects.push({
-      title,
-      description: description.slice(0, 1600),
-      skills,
-      date,
-      category,
-      detailsUrl,
-      demoUrl,
-      githubUrl
-    });
+  $(selectors).each((_, element) => {
+    const candidate = $(element).is("a") ? $(element).find("h1,h2,h3,h4").first().get(0) || element : element;
+    const project = extractProjectFromContainer($, candidate, sourceUrl);
+    if (project) projects.push(project);
   });
-
   return projects;
 }
 
 function walkJson(value: unknown, sourceUrl: string, result: CrioProject[]) {
-  if (Array.isArray(value)) {
-    value.forEach(v => walkJson(v, sourceUrl, result));
-    return;
-  }
+  if (Array.isArray(value)) { value.forEach((item) => walkJson(item, sourceUrl, result)); return; }
   if (!value || typeof value !== "object") return;
 
-  const obj = value as Record<string, unknown>;
-  const title = normalise(String(obj.title || obj.name || obj.projectName || ""));
-  const description = normalise(String(obj.description || obj.summary || obj.projectDescription || ""));
-  const rawSkills = obj.skills || obj.technologies || obj.tags || obj.skillList;
+  const object = value as Record<string, unknown>;
+  const title = normalise(String(object.title || object.name || object.projectName || ""));
+  const description = normalise(String(object.description || object.summary || object.projectDescription || object.overview || ""));
+  const rawSkills = object.skills || object.technologies || object.tags || object.skillList;
   const skills = Array.isArray(rawSkills)
-    ? unique(rawSkills.map(v => normalise(typeof v === "string" ? v : String((v as any)?.name || ""))).filter(Boolean))
+    ? unique(rawSkills.map((item) => normalise(typeof item === "string" ? item : String((item as any)?.name || (item as any)?.title || ""))).filter(Boolean))
     : [];
 
   if (title && (description || skills.length) && !/portfolio|skills acquired|github contributions/i.test(title)) {
     result.push({
       title,
-      description: description.slice(0, 1600),
-      skills: skills.slice(0, 20),
-      date: normalise(String(obj.date || obj.duration || obj.timeline || obj.completedAt || "Crio")),
-      category: /mini/i.test(String(obj.type || obj.category || "")) ? "Mini Project" : "Professional Project",
-      detailsUrl: absoluteUrl(String(obj.detailsUrl || obj.projectUrl || obj.url || ""), sourceUrl),
-      demoUrl: absoluteUrl(String(obj.demoUrl || obj.liveUrl || ""), sourceUrl),
-      githubUrl: absoluteUrl(String(obj.githubUrl || obj.repositoryUrl || obj.repoUrl || ""), sourceUrl)
+      description: description.slice(0, 1800),
+      skills: skills.slice(0, 24),
+      date: normalise(String(object.date || object.duration || object.timeline || object.completedAt || "Crio")),
+      category: /mini/i.test(String(object.type || object.category || "")) ? "Mini Project" : "Professional Project",
+      detailsUrl: absoluteUrl(String(object.detailsUrl || object.projectUrl || object.url || ""), sourceUrl),
+      demoUrl: absoluteUrl(String(object.demoUrl || object.liveUrl || ""), sourceUrl),
+      githubUrl: absoluteUrl(String(object.githubUrl || object.repositoryUrl || object.repoUrl || ""), sourceUrl)
     });
   }
-
-  Object.values(obj).forEach(v => walkJson(v, sourceUrl, result));
+  Object.values(object).forEach((item) => walkJson(item, sourceUrl, result));
 }
 
 function extractProjectsFromEmbeddedJson(html: string, sourceUrl: string): CrioProject[] {
   const $ = cheerio.load(html);
   const projects: CrioProject[] = [];
   $("script[type='application/ld+json'], script#__NEXT_DATA__, script[type='application/json']").each((_, script) => {
-    try { walkJson(JSON.parse($(script).text()), sourceUrl, projects); } catch { /* ignore malformed data */ }
+    try { walkJson(JSON.parse($(script).text()), sourceUrl, projects); } catch { /* Ignore invalid script data. */ }
   });
   return projects;
 }
 
-function projectKey(title: string) {
-  const cleaned = normalise(title)
-    .toLowerCase()
-    .replace(/\b(qa|automation|automated|project|professional|mini|application)\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-  return cleaned.replace(/\s+/g, "") || title.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
 function mergeProjectRecords(primary: CrioProject, secondary: CrioProject): CrioProject {
-  const descriptions = [primary.description, secondary.description].filter(Boolean);
-  const date = [primary.date, secondary.date].find(v => v && !/^crio$/i.test(v)) || "Crio";
-  const source = primary.source === secondary.source
-    ? primary.source
-    : "Crio + Resume";
-
+  const descriptions = [primary.description, secondary.description].filter(Boolean).sort((a, b) => b.length - a.length);
   return {
     ...secondary,
     ...primary,
     title: primary.title || secondary.title,
-    description: descriptions.sort((a, b) => b.length - a.length)[0] || "Project details are available in the portfolio.",
+    description: descriptions[0] || "Project details are available in the Crio portfolio.",
     skills: unique([...(primary.skills || []), ...(secondary.skills || [])]).slice(0, 24),
-    date,
+    date: [primary.date, secondary.date].find((value) => value && !/^crio$/i.test(value)) || "Crio",
     category: primary.category || secondary.category,
     detailsUrl: primary.detailsUrl || secondary.detailsUrl,
     demoUrl: primary.demoUrl || secondary.demoUrl,
-    githubUrl: primary.githubUrl || secondary.githubUrl,
-    source
+    githubUrl: primary.githubUrl || secondary.githubUrl
   };
 }
 
-function combineCrioAndResume(crioProjects: CrioProject[]) {
+function parseConfiguredProjects(): CrioProject[] {
+  const raw = process.env.CRIO_PROJECTS_JSON;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((project: any) => ({
+      title: normalise(String(project.title || project.name || "")),
+      description: normalise(String(project.description || project.summary || "")),
+      skills: Array.isArray(project.skills) ? unique(project.skills.map((skill: unknown) => normalise(String(skill))).filter(Boolean)) : [],
+      date: normalise(String(project.date || "Crio")),
+      category: /mini/i.test(String(project.category || "")) ? "Mini Project" : "Professional Project",
+      detailsUrl: project.detailsUrl,
+      demoUrl: project.demoUrl,
+      githubUrl: project.githubUrl
+    })).filter((project: CrioProject) => project.title);
+  } catch { return []; }
+}
+
+function mergeAll(projectLists: CrioProject[][]) {
   const map = new Map<string, CrioProject>();
-
-  for (const project of crioProjects) {
-    const prepared = { ...project, source: "Crio" as const };
-    const key = projectKey(prepared.title);
+  projectLists.flat().forEach((project) => {
+    const key = projectKey(project.title);
     const existing = map.get(key);
-    map.set(key, existing ? mergeProjectRecords(prepared, existing) : prepared);
-  }
-
-  for (const project of profile.fallbackProjects) {
-    const prepared: CrioProject = {
-      ...project,
-      category: "Professional Project",
-      source: "Resume"
-    };
-    const key = projectKey(prepared.title);
-    const existing = map.get(key);
-    map.set(key, existing ? mergeProjectRecords(existing, prepared) : prepared);
-  }
-
+    map.set(key, existing ? mergeProjectRecords(project, existing) : project);
+  });
   return [...map.values()];
+}
+
+function fallbackProjects(): CrioProject[] {
+  return mergeAll([
+    profile.crioFallbackProjects as CrioProject[],
+    profile.fallbackProjects.map((project) => ({ ...project, category: "Professional Project" as const }))
+  ]);
 }
 
 export async function GET() {
   const url = process.env.CRIO_PORTFOLIO_URL || profile.links.crio;
+  const configured = parseConfiguredProjects();
+
   try {
     const response = await fetch(url, {
       next: { revalidate: 900 },
@@ -207,31 +215,29 @@ export async function GET() {
     if (!response.ok) throw new Error(`Crio request failed with ${response.status}`);
 
     const html = await response.text();
-    const crioProjects = extractProjectsFromEmbeddedJson(html, url)
-      .concat(extractProjectsFromDom(html, url));
-    const projects = combineCrioAndResume(crioProjects);
+    const extracted = mergeAll([
+      extractProjectsFromEmbeddedJson(html, url),
+      extractProjectsFromDom(html, url)
+    ]);
+    const projects = mergeAll([extracted, configured, fallbackProjects()]);
 
     return NextResponse.json({
       source: url,
       projects,
       projectCount: projects.length,
-      crioProjectCount: crioProjects.length,
-      resumeProjectCount: profile.fallbackProjects.length,
-      live: crioProjects.length > 0,
-      syncedAt: new Date().toISOString(),
-      warning: crioProjects.length ? undefined : "Crio returned a page, but no project cards could be extracted. Showing projects from the resume."
+      crioProjectCount: extracted.length,
+      live: extracted.length > 0,
+      syncedAt: new Date().toISOString()
     });
-  } catch (error) {
+  } catch {
+    const projects = mergeAll([configured, fallbackProjects()]);
     return NextResponse.json({
       source: url,
-      projects: combineCrioAndResume([]),
-      projectCount: profile.fallbackProjects.length,
+      projects,
+      projectCount: projects.length,
       crioProjectCount: 0,
-      resumeProjectCount: profile.fallbackProjects.length,
       live: false,
-      syncedAt: new Date().toISOString(),
-      warning: "Showing resume-backed projects because Crio blocked or failed automated retrieval.",
-      error: error instanceof Error ? error.message : "Unknown Crio sync error"
+      syncedAt: new Date().toISOString()
     });
   }
 }

@@ -43,6 +43,36 @@ export const profile = {
       ]
     }
   ],
+  crioFallbackProjects: [
+    {
+      title:"QTrip QA",
+      date:"Jul 2026",
+      category:"Professional Project",
+      description:"Automated the QTrip travel application using a maintainable Selenium and TestNG framework. Designed and automated key user flows with Page Object Model and Page Factory, used Apache POI for data-driven testing, grouped TestNG test cases, implemented reusable wrapper methods, and generated customised Extent Reports.",
+      skills:["Java","Selenium WebDriver","TestNG","Page Object Model","Page Factory","XPath","Apache POI","Data-Driven Testing","Extent Reports","Wrapper Methods"]
+    },
+    {
+      title:"YouTube Automation",
+      date:"May - Jun 2026",
+      category:"Professional Project",
+      description:"Automated YouTube browsing and video-validation workflows and asserted visible properties such as views, likes and related video information using stable Selenium locators and TestNG validations.",
+      skills:["Java","Selenium WebDriver","TestNG","XPath","Assertions","Dynamic Element Handling"]
+    },
+    {
+      title:"LeetCode Automation",
+      date:"May - Jun 2026",
+      category:"Professional Project",
+      description:"Automated the LeetCode problems page to validate the latest problem entries and verify that solution submission is blocked for users who are not signed in.",
+      skills:["Java","Selenium WebDriver","Dynamic XPath","Explicit Waits","Assertions","TestNG"]
+    },
+    {
+      title:"Flipkart Automation",
+      date:"Jul 2025 - Present",
+      category:"Professional Project",
+      description:"Developed an end-to-end automation framework for Flipkart covering product search, filtering, sorting and validation of titles, ratings, reviews, discounts and image URLs using robust XPath locators and explicit waits.",
+      skills:["Java","Selenium WebDriver","TestNG","XPath","Page Object Model","WebDriverManager","Gradle","Assertions","Explicit Waits","Wrapper Methods"]
+    }
+  ],
   fallbackProjects: [
     {title:"QKart QA",date:"July 2025 - Present",description:"End-to-end Selenium and TestNG automation for registration, login, product search, cart and checkout flows.",skills:["Java","Selenium","TestNG","XPath","Apache POI","POM","Gradle"]},
     {title:"Flipkart Automation",date:"July 2025 - Present",description:"Automated product search, filtering, sorting and validation of ratings, reviews, discounts and image URLs.",skills:["Java","Selenium","TestNG","XPath","POM","Gradle"]},
