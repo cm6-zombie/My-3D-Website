@@ -166,20 +166,47 @@ function mergeProjectRecords(primary: CrioProject, secondary: CrioProject): Crio
 function parseConfiguredProjects(): CrioProject[] {
   const raw = process.env.CRIO_PROJECTS_JSON;
   if (!raw) return [];
+
   try {
-    const parsed = JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((project: any) => ({
-      title: normalise(String(project.title || project.name || "")),
-      description: normalise(String(project.description || project.summary || "")),
-      skills: Array.isArray(project.skills) ? unique(project.skills.map((skill: unknown) => normalise(String(skill))).filter(Boolean)) : [],
-      date: normalise(String(project.date || "Crio")),
-      category: /mini/i.test(String(project.category || "")) ? "Mini Project" : "Professional Project",
-      detailsUrl: project.detailsUrl,
-      demoUrl: project.demoUrl,
-      githubUrl: project.githubUrl
-    })).filter((project: CrioProject) => project.title);
-  } catch { return []; }
+
+    return parsed
+      .map((value: unknown): CrioProject | null => {
+        if (!value || typeof value !== "object") return null;
+
+        const project = value as Record<string, unknown>;
+        const title = normalise(String(project.title || project.name || ""));
+        if (!title) return null;
+
+        const skills: string[] = Array.isArray(project.skills)
+          ? unique<string>(
+              project.skills
+                .map((skill: unknown): string => normalise(String(skill)))
+                .filter((skill: string): boolean => skill.length > 0)
+            )
+          : [];
+
+        const optionalUrl = (value: unknown): string | undefined =>
+          typeof value === "string" && value.trim() ? value.trim() : undefined;
+
+        return {
+          title,
+          description: normalise(String(project.description || project.summary || "")),
+          skills,
+          date: normalise(String(project.date || "Crio")),
+          category: /mini/i.test(String(project.category || ""))
+            ? "Mini Project"
+            : "Professional Project",
+          detailsUrl: optionalUrl(project.detailsUrl),
+          demoUrl: optionalUrl(project.demoUrl),
+          githubUrl: optionalUrl(project.githubUrl)
+        };
+      })
+      .filter((project): project is CrioProject => project !== null);
+  } catch {
+    return [];
+  }
 }
 
 function mergeAll(projectLists: CrioProject[][]) {
