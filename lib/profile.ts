@@ -13,6 +13,11 @@ export const profile = {
   technicalSkills: ["Core Java","SQL / T-SQL","Selenium WebDriver","TestNG","Page Object Model","Apache POI","Git","Gradle","MySQL","Microsoft SQL Server","AWS EC2","IAM","CloudWatch","CloudFormation","Ansible","Terraform","ServiceNow","Linux","Agile / Scrum","STLC","RCA","Incident Management"],
   softSkills: ["Stakeholder communication","Cross-functional collaboration","Problem solving","Incident ownership","Documentation","Risk assessment"],
   leadershipSkills: ["Primary escalation ownership","Go-live assurance","RCA leadership","Audit coordination","Process standardisation","Continuous improvement"],
+  certifications: [
+    {type:"Certification",title:"Microsoft Azure AI Fundamentals (AI-900)",issuer:"Microsoft",period:"Certified"},
+    {type:"Professional Learning",title:"Masters in QA Automation",issuer:"Crio.Do Fellowship",period:"July 2025 – Present"},
+    {type:"Education",title:"B.Tech in Electronics and Communication Engineering",issuer:"National Institute of Technology, Arunachal Pradesh",period:"2015 – 2019 | CGPA 7.32"}
+  ],
   experience: [
     {
       company:"PricewaterhouseCoopers (PwC) Services LLP",

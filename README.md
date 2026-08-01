@@ -34,3 +34,7 @@ CRIO_PORTFOLIO_URL=https://www.crio.do/learn/portfolio/subham-cm6/
 ```
 
 After deploying, open `/api/crio` on the deployed site to verify `live: true` and inspect `projectCount`. If Crio blocks server-side retrieval, the website will show the resume-backed fallback and a visible warning.
+
+## Phase 1 premium UI upgrade
+
+This version includes a redesigned landing page, interactive 3D hero, Framer Motion animations, responsive navigation and layouts, an experience timeline, premium project cards, skill icon groups, certifications and education, contact section, persistent dark/light theme, Vercel Analytics, expanded SEO metadata, sitemap, robots rules and Person JSON-LD structured data.
