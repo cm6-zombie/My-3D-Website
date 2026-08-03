@@ -129,8 +129,8 @@ function classifyCrioSkills(projects: AnyData[]) {
 }
 
 export default function Portfolio() {
-  const [github, setGithub] = useState<AnyData>({});
-  const [leetcode, setLeetcode] = useState<AnyData>({});
+  const [github, setGithub] = useState<AnyData>({ contributionsConfigured: false, repos: [], user: {} });
+  const [leetcode, setLeetcode] = useState<AnyData>({ accepted: 29, submissions: 39, acceptanceRate: 84.6, breakdown: [{ difficulty: "Easy", count: 27 }, { difficulty: "Medium", count: 2 }, { difficulty: "Hard", count: 0 }] });
   const [crio, setCrio] = useState<AnyData>({ projects: [...profile.crioFallbackProjects, ...profile.fallbackProjects] });
   const [config, setConfig] = useState<AnyData>({ resumeUrl: profile.links.resume });
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -143,17 +143,56 @@ export default function Portfolio() {
   const [thinking, setThinking] = useState(false);
   const refreshMs = Number(process.env.NEXT_PUBLIC_REFRESH_MS || 300000);
 
+  const CACHE_KEYS = {
+    github: "portfolio-cache-github-v1",
+    leetcode: "portfolio-cache-leetcode-v1",
+    crio: "portfolio-cache-crio-v1",
+    config: "portfolio-cache-config-v1"
+  } as const;
+
+  function readCache(key: string): AnyData | null {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeCache(key: string, value: AnyData) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Caching is optional. The portfolio still works without browser storage.
+    }
+  }
+
+  async function fetchSafe(url: string): Promise<AnyData | null> {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) return null;
+      const value = await response.json();
+      if (!value || typeof value !== "object" || value.error) return null;
+      return value;
+    } catch {
+      return null;
+    }
+  }
+
   async function load() {
-    const results = await Promise.allSettled([
-      fetch("/api/github").then(r => r.json()),
-      fetch("/api/leetcode").then(r => r.json()),
-      fetch("/api/crio").then(r => r.json()),
-      fetch("/api/config").then(r => r.json())
+    const [githubData, leetcodeData, crioData, configData] = await Promise.all([
+      fetchSafe("/api/github"),
+      fetchSafe("/api/leetcode"),
+      fetchSafe("/api/crio"),
+      fetchSafe("/api/config")
     ]);
-    if (results[0].status === "fulfilled") setGithub(results[0].value);
-    if (results[1].status === "fulfilled") setLeetcode(results[1].value);
-    if (results[2].status === "fulfilled") setCrio(results[2].value);
-    if (results[3].status === "fulfilled") setConfig(results[3].value);
+
+    if (githubData) { setGithub(githubData); writeCache(CACHE_KEYS.github, githubData); }
+    if (leetcodeData) { setLeetcode(leetcodeData); writeCache(CACHE_KEYS.leetcode, leetcodeData); }
+    if (crioData?.projects?.length) { setCrio(crioData); writeCache(CACHE_KEYS.crio, crioData); }
+    if (configData) { setConfig(configData); writeCache(CACHE_KEYS.config, configData); }
   }
 
   useEffect(() => {
@@ -161,6 +200,16 @@ export default function Portfolio() {
     const initial = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
     setTheme(initial);
     document.documentElement.dataset.theme = initial;
+
+    const cachedGithub = readCache(CACHE_KEYS.github);
+    const cachedLeetcode = readCache(CACHE_KEYS.leetcode);
+    const cachedCrio = readCache(CACHE_KEYS.crio);
+    const cachedConfig = readCache(CACHE_KEYS.config);
+    if (cachedGithub) setGithub(cachedGithub);
+    if (cachedLeetcode) setLeetcode(cachedLeetcode);
+    if (cachedCrio?.projects?.length) setCrio(cachedCrio);
+    if (cachedConfig) setConfig(cachedConfig);
+
     load();
     const id = window.setInterval(load, refreshMs);
     return () => window.clearInterval(id);
@@ -183,7 +232,7 @@ export default function Portfolio() {
       const j = await r.json();
       setMessages(m => [...m, { role: "assistant", text: j.answer || "I could not answer that from the portfolio data." }]);
     } catch {
-      setMessages(m => [...m, { role: "assistant", text: "The assistant is temporarily unavailable." }]);
+      setMessages(m => [...m, { role: "assistant", text: "I could not process that request. You can still explore the portfolio or contact Mainak by email." }]);
     } finally { setThinking(false); }
   }
 
@@ -279,7 +328,7 @@ export default function Portfolio() {
       <Metric icon={<Github/>} label="GitHub repositories" value={github.user?.publicRepos ?? "—"} sub={`${github.user?.followers ?? 0} followers`}/>
       <Metric icon={<Code2/>} label="LeetCode solved" value={leetcode.accepted ?? "—"} sub={`${leetcode.acceptanceRate ?? "—"}% acceptance`}/>
       <Metric icon={<BriefcaseBusiness/>} label="Professional experience" value="7+" sub="years across support and QA"/>
-      <Metric icon={<BarChart3/>} label="Annual contributions" value={github.contributions?.totalContributions ?? "—"} sub={github.contributionsConfigured ? "Live GitHub activity" : "Connect GITHUB_TOKEN"}/>
+      <Metric icon={<BarChart3/>} label="Annual contributions" value={github.contributions?.totalContributions ?? "—"} sub="GitHub activity"/>
     </section>
 
     <section id="skills" className="section">
@@ -334,7 +383,7 @@ export default function Portfolio() {
     <section className="section data-section">
       <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">LIVE DEVELOPMENT DATA</p><h2>GitHub and LeetCode.</h2></div><p>Automatically refreshed activity that demonstrates consistent development and problem-solving practice.</p></motion.div>
       <div className="data-grid">
-        <div className="data-card glass"><div className="data-card-title"><Github/><div><h3>GitHub activity</h3><span>{github.contributionsConfigured ? "Live 12-month contribution data" : "Add GITHUB_TOKEN for graph data"}</span></div></div><ContributionGraph data={github.contributions}/></div>
+        <div className="data-card glass"><div className="data-card-title"><Github/><div><h3>GitHub activity</h3><span>12-month contribution overview</span></div></div><ContributionGraph data={github.contributions}/></div>
         <div className="data-card glass"><div className="data-card-title"><Code2/><div><h3>LeetCode progress</h3><span>Live solved-problem tracking</span></div></div><div className="leetcode-panel"><div className="donut" style={{"--p":`${Math.min(100, leetcode.acceptanceRate || 0) * 3.6}deg`} as any}><div><b>{leetcode.acceptanceRate ?? "—"}%</b><span>Acceptance</span></div></div><div className="difficulty"><Progress label="Easy" value={totals.Easy || 0} max={Math.max(1,...Object.values(totals).map(Number))}/><Progress label="Medium" value={totals.Medium || 0} max={Math.max(1,...Object.values(totals).map(Number))}/><Progress label="Hard" value={totals.Hard || 0} max={Math.max(1,...Object.values(totals).map(Number))}/></div><div className="rank"><small>Global ranking</small><b>{leetcode.ranking?.toLocaleString?.() ?? "—"}</b><span>{leetcode.submissions ?? 0} submissions</span></div></div></div>
       </div>
     </section>
@@ -361,5 +410,5 @@ export default function Portfolio() {
 function Metric({icon,label,value,sub}:{icon:React.ReactNode,label:string,value:any,sub:string}){return <motion.div className="metric glass" {...reveal}><div className="metric-icon">{icon}</div><div><small>{label}</small><b>{value}</b><span>{sub}</span></div></motion.div>}
 function SkillCard({icon,title,items}:{icon:React.ReactNode,title:string,items:string[]}){return <motion.article className="skill-card glass" {...reveal}><div className="skill-icon">{icon}</div><h3>{title}</h3><div className="skill-list">{items.map(x=><span key={x}>{x}</span>)}</div></motion.article>}
 function Progress({label,value,max}:{label:string,value:number,max:number}){return <div className="progress"><div><span>{label}</span><b>{value}</b></div><div className="track"><span style={{width:`${Math.max(4,(value/max)*100)}%`}}/></div></div>}
-function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="graph-empty"><Github size={28}/><p>Contribution data will appear here after the GitHub token is configured.</p></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${Math.min(4,d.contributionLevel||0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
+function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="contribution-wrap" aria-label="GitHub contribution activity"><div className="contribution-grid">{Array.from({length:371},(_,i)=><span key={i} className="level-0"/>)}</div><div className="graph-caption"><span>GitHub activity</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${({ NONE:0, FIRST_QUARTILE:1, SECOND_QUARTILE:2, THIRD_QUARTILE:3, FOURTH_QUARTILE:4 } as Record<string, number>)[String(d.contributionLevel)] ?? Math.min(4, Number(d.contributionCount || 0) > 0 ? 1 : 0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
 function isFeaturedProject(title:string){return /^(qtrip qa|qcalc|amazon store automation|flipkart automation|leetcode automation|youtube automation)$/i.test((title||"").trim())}
