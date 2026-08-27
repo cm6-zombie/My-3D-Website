@@ -42,6 +42,26 @@ function isSafeProjectRecord(project: AnyData): boolean {
 
 const reveal = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.16 }, transition: { duration: 0.55 } };
 
+const STARRED_PROJECT: AnyData = {
+  title: "Semantic Job Matcher",
+  date: "Aug 2026",
+  category: "Featured AI Project",
+  featured: true,
+  starred: true,
+  description: "Production multi-source semantic job-matching pipeline that builds a reusable resume profile, collects live jobs from public and official sources, normalizes them into one schema, calculates explainable semantic match scores, and sends batched email alerts for qualifying opportunities while suppressing duplicate notifications.",
+  scope: [
+    "Aggregates jobs from Remote OK, ATS APIs, official company career portals, and LinkedIn/Naukri job-alert emails.",
+    "Ranks opportunities using sentence-transformer embeddings, cosine similarity, skill coverage, title alignment, and experience fit.",
+    "Runs automatically with GitHub Actions, isolates source failures, and persists notification state to prevent duplicate alerts.",
+    "Sends one Gmail notification batch for new jobs meeting the configurable match threshold, with an 80% production default."
+  ],
+  skills: [
+    "Python", "Sentence Transformers", "Semantic Search", "Cosine Similarity", "GitHub Actions",
+    "Greenhouse API", "Lever API", "Ashby API", "SmartRecruiters", "Workday", "IMAP", "SMTP"
+  ],
+  githubUrl: "https://github.com/cm6-zombie/semantic-job-matcher"
+};
+
 const SKILL_ALIASES: Record<string, string> = {
   "selenium": "Selenium WebDriver",
   "selenium webdriver": "Selenium WebDriver",
@@ -117,9 +137,6 @@ function classifyCrioSkills(projects: AnyData[]) {
       } else if (/servicenow|incident|problem management|rca|sla|release|lms|hrms|data migration|audit|sop/.test(lower)) {
         push("operations", skill);
       }
-      // Unknown labels are intentionally ignored so project metadata does not
-      // pollute the public Skills section with non-technology terms.
-
     }
   }
 
@@ -238,8 +255,12 @@ export default function Portfolio() {
 
   const totals = useMemo(() => Object.fromEntries((leetcode.breakdown || []).map((x: any) => [x.difficulty, x.count])), [leetcode]);
   const allProjects = useMemo(() => {
-    const source = Array.isArray(crio.projects) ? crio.projects : [...profile.crioFallbackProjects, ...profile.fallbackProjects];
-    return source.filter(isSafeProjectRecord).sort((a: any, b: any) => Number(isFeaturedProject(b.title)) - Number(isFeaturedProject(a.title)));
+    const syncedProjects = Array.isArray(crio.projects) ? crio.projects : [...profile.crioFallbackProjects, ...profile.fallbackProjects];
+    const source = [STARRED_PROJECT, ...syncedProjects.filter((project: any) => String(project?.title || "").trim().toLowerCase() !== "semantic job matcher")];
+    return source.filter(isSafeProjectRecord).sort((a: any, b: any) =>
+      Number(Boolean(b.starred)) - Number(Boolean(a.starred)) ||
+      Number(isFeaturedProject(b.title)) - Number(isFeaturedProject(a.title))
+    );
   }, [crio.projects]);
   const crioSkillCategories = useMemo(() => classifyCrioSkills(allProjects), [allProjects]);
   const displayedSkills = useMemo(() => ({
@@ -268,7 +289,7 @@ export default function Portfolio() {
     const matchesSearch = !projectSearch.trim() || haystack.includes(projectSearch.trim().toLowerCase());
     const filter = projectFilter.toLowerCase();
     const matchesFilter = projectFilter === "All" ||
-      (projectFilter === "Featured" && isFeaturedProject(p.title)) ||
+      (projectFilter === "Featured" && (p.starred || isFeaturedProject(p.title))) ||
       (projectFilter === "Professional" && /professional/i.test(p.category || "")) ||
       (projectFilter === "Mini" && /mini/i.test(p.category || "")) || haystack.includes(filter);
     return matchesSearch && matchesFilter;
@@ -366,7 +387,7 @@ export default function Portfolio() {
         const primaryUrl = p.detailsUrl || p.githubUrl || p.demoUrl;
         return <motion.article className={`project-card glass${primaryUrl ? " clickable" : ""}`} key={`${p.title}-${i}`} {...reveal} onClick={() => primaryUrl && window.open(primaryUrl, "_blank", "noopener,noreferrer")}> 
           <div className="project-card-head"><span className="number">{String(i+1).padStart(2,"0")}</span><span className="project-type">{p.category || "Professional Project"}</span></div>
-          {isFeaturedProject(p.title) && <span className="featured-ribbon"><Sparkles size={13}/> Featured Project</span>}
+          {p.starred ? <span className="featured-ribbon"><Sparkles size={13}/> ★ Starred Featured Project</span> : isFeaturedProject(p.title) && <span className="featured-ribbon"><Sparkles size={13}/> Featured Project</span>}
           <h3>{p.title}</h3>{p.date && <p className="project-date">{p.date}</p>}
           <p className="project-description">{p.description || "Project details are available in the portfolio."}</p>
           {Array.isArray(p.scope) && p.scope.length > 0 && <div className="project-scope"><h4>Scope of work</h4><ul>{p.scope.map((item: string) => <li key={item}><CheckCircle2 size={14}/><span>{item}</span></li>)}</ul></div>}
