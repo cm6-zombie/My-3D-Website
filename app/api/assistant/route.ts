@@ -15,7 +15,7 @@ export async function POST(req:Request){
   if(!key) return NextResponse.json({answer:localAnswer(question),mode:"resume-grounded local assistant"});
   try{
     const model=process.env.OPENAI_MODEL;
-    if(!model) return NextResponse.json({answer:localAnswer(question),mode:"resume-grounded local assistant"});
+    if(!model) return NextResponse.json({answer:localAnswer(question),mode:"resume-grounded local assistant",warning:"Set OPENAI_MODEL to enable the hosted AI response."});
     const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${key}`},body:JSON.stringify({model,input:[{role:"system",content:`You are the portfolio assistant for Mainak Chandra. Answer only from this verified resume/project context. If the context does not support the answer, say so. Context:\n${assistantKnowledge.join("\n")}`},{role:"user",content:question}],max_output_tokens:300})});
     if(!response.ok) throw new Error("AI provider error");
     const json=await response.json();

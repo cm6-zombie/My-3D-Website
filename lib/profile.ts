@@ -1,7 +1,7 @@
 export const profile = {
   name: "Mainak Chandra",
-  title: "QA Automation Engineer | SDET | Operations Support",
-  summary: "IT professional with 7 years of experience in IT Operations and Application Support across BFSI and HR-LMS domains. Proven track record in incident management, production monitoring, RCA, SQL-based troubleshooting, release validation, and stakeholder communication — consistently ensuring application availability and SLA compliance. Complementing this, I have built hands-on expertise in Java, Selenium WebDriver, TestNG, SQL, Git, Gradle, and Page Object Model (POM) framework development. Seeking a QA Automation Engineer, SDET, or Software Test Engineer role to leverage a unique blend of production support depth and automation skills to deliver reliable, high-quality software",
+  title: "Engineering Professional | Test Automation | Production Reliability",
+  summary: "Engineering professional with 7 years of experience across test automation, production reliability, cloud/Linux systems, and release validation. Hands-on with Java, Python, Selenium WebDriver, TestNG, SQL, APIs, and debugging. At PwC, validated 350,000+ learner accounts and built AI automation that reduced manual reporting effort by up to 95%. Built production-grade automation and software projects spanning semantic search, API integrations, CI/CD, and web engineering.",
   email: "subham.cm6@gmail.com",
   location: "Kolkata, India",
   links: {
@@ -10,36 +10,33 @@ export const profile = {
     crio: "https://www.crio.do/learn/portfolio/subham-cm6/",
     resume: "/Mainak-Chandra-Resume.pdf"
   },
-  technicalSkills: ["Core Java","SQL / T-SQL","Selenium WebDriver","TestNG","Page Object Model","Apache POI","Git","Gradle","MySQL","Microsoft SQL Server","AWS EC2","IAM","CloudWatch","CloudFormation","Ansible","Terraform","ServiceNow","Linux","Agile / Scrum","STLC","RCA","Incident Management"],
-  softSkills: ["Stakeholder communication","Cross-functional collaboration","Problem solving","Incident ownership","Documentation","Risk assessment"],
-  leadershipSkills: ["Primary escalation ownership","Go-live assurance","RCA leadership","Audit coordination","Process standardisation","Continuous improvement"],
+  technicalSkills: ["Java","Python","TypeScript","SQL / T-SQL","Selenium WebDriver","TestNG","pytest","Page Object Model (POM)","Apache POI","Data-Driven Testing","XPath","Assertions","Explicit Waits","Test Listeners","REST APIs","Next.js API Routes","JSON","API Integration","Data Validation","Error Handling","Data Normalization","Caching","Fallback Strategies","Sentence Transformers","Text Embeddings","Semantic Search","Cosine Similarity","Ranking & Scoring Algorithms","Resume Parsing","MySQL","Microsoft SQL Server","AWS EC2","IAM","CloudWatch","S3","VPC","Linux","Debugging","Root Cause Analysis (RCA)","Production Monitoring","Release Validation","Next.js","React","Microsoft Copilot Studio","Git","GitHub Actions","Gradle","OOP","Agile / Scrum","STLC"],
+  softSkills: ["Cross-functional collaboration","Stakeholder coordination","Structured problem solving","Technical documentation","Risk assessment","Audit-ready execution"],
+  leadershipSkills: ["Pre-launch validation & go-live assurance","Large-scale migration validation","RCA leadership","Cross-functional issue resolution","Workflow standardisation","AI automation delivery"],
   certifications: [
-    {type:"Certification",title:"Microsoft Azure AI Fundamentals (AI-900)",issuer:"Microsoft",period:"Certified"},
-    {type:"Professional Learning",title:"Masters in QA Automation",issuer:"Crio.Do Fellowship",period:"July 2025 – Present"},
-    {type:"Education",title:"B.Tech in Electronics and Communication Engineering",issuer:"National Institute of Technology, Arunachal Pradesh",period:"2015 – 2019 | CGPA 7.32"}
+    {type:"Education",title:"B.Tech in Electronics and Communication Engineering",issuer:"National Institute of Technology, Arunachal Pradesh",period:"2015 - 2019 | CGPA 7.32"}
   ],
   experience: [
     {
       company:"PricewaterhouseCoopers (PwC) Services LLP",
-      role:"Senior Associate – Senior Operations Support Engineer",
-      period:"July 2021 – Present | 5 years",
+      role:"Senior Associate",
+      period:"July 2021 - Present",
       points:[
-        "Owned enterprise-wide operational stability for PwC's global LMS network as primary escalation authority for complex, multi-platform incidents — consistently exceeding SLA commitments and sustaining near-zero downtime across regions and time zones.",
-        "Built production-grade AI agents in Microsoft Co-pilot Studio to automate ServiceNow ticket trend analysis, cutting manual reporting effort by up to 90%; delivered executive-level monthly and quarterly performance reports translating raw data into KPI summaries, trend analysis, and improvement roadmaps.",
-        "Led systematic RCA for chronic incidents, coordinating cross-functional teams to measurably reduce recurrence; managed incident, change, and problem responses with audit-ready rigor — partnering with internal and external audit teams to validate SOP and governance compliance.",
-        "Served as senior technical liaison across engineering, integration, and business teams during full-cycle LMS implementations — owning pre-launch validation, risk assessment, and go-live assurance; drove continuous improvement by automating workflows and standardizing procedures to reduce operational toil."
+        "Led pre-launch validation, risk assessment, and go-live assurance for global LMS implementations and integrations spanning HRMS, Active Directory, and third-party content providers; coordinated engineering, integration, and business stakeholders across release cycles.",
+        "Validated and reconciled 350,000+ learner accounts during a large-scale LMS migration, applying completion-precedence rules and migrating exclusive training records to preserve learning-history continuity.",
+        "Investigated complex multi-platform production issues through structured RCA and SQL-based troubleshooting; drove cross-functional resolution and recurrence-reduction actions while maintaining SLA and audit requirements.",
+        "Built AI agents in Microsoft Copilot Studio to automate ServiceNow ticket trend analysis, reducing manual reporting effort by up to 95% and producing KPI and trend outputs for monthly and quarterly reviews.",
+        "Standardized support workflows, SOPs, runbooks, and operational procedures to improve repeatability across incident, change, problem, release, and go-live activities."
       ]
     },
     {
       company:"Tata Consultancy Services (TCS)",
       role:"Systems Engineer",
-      period:"June 2019 – July 2021 | 2 years",
+      period:"June 2019 - July 2021",
       points:[
-        "Managed and supported AWS EC2 instances running RHEL, CentOS, and Ubuntu, performing system health monitoring (CPU, memory, disk), performance tuning, and capacity planning.",
-        "Automated patch management using AWS Systems Manager Patch Manager; implemented infrastructure automation using Ansible, Terraform, and CloudFormation.",
-        "Configured IAM roles, security groups, Linux firewalls, and auditing via CloudTrail and auditd to ensure secure and compliant infrastructure.",
-        "Designed and maintained backup and disaster recovery strategies using AWS Backup, EBS snapshots, and Route 53 failover.",
-        "Configured VPCs, subnets, gateways, and managed storage services (EFS, NFS, S3); set up monitoring and logging with AWS CloudWatch and Linux system logs."
+        "Managed Linux systems on AWS EC2 across RHEL, CentOS, and Ubuntu; monitored CPU, memory, disk, CloudWatch metrics, and Linux system logs to diagnose reliability and performance issues.",
+        "Automated patch management and infrastructure provisioning using AWS Systems Manager Patch Manager, Ansible, Terraform, and CloudFormation.",
+        "Configured IAM, security groups, firewalls, VPC/networking, storage, and backup/disaster-recovery controls using AWS Backup, EBS snapshots, and Route 53 failover."
       ]
     }
   ],
@@ -132,9 +129,52 @@ export const profile = {
     }
   ],
   fallbackProjects: [
-    {title:"QKart QA",date:"July 2025 - Present",category:"Professional Project",description:"Developed an end-to-end Selenium WebDriver automation framework for the QKart e-commerce application, covering registration, login, product search, cart management and checkout workflows.",scope:["Automated registration, login, product search, cart and checkout workflows.","Implemented dynamic XPath, waits, Apache POI data-driven testing, TestNG parameterisation, grouping and listeners.","Created reusable Page Object Model components and screenshot capture for debugging."],skills:["Java","Selenium WebDriver","TestNG","XPath","Apache POI","Page Object Model","Gradle"]},
-    {title:"Project Tango AC Buenos Aires",date:"PwC",category:"Professional Project",description:"Validated and reconciled 2,500+ learner accounts during a large-scale LMS migration while preserving learning history and progress.",scope:["Merged victim and survivor learner profiles using completion precedence.","Migrated training records while ensuring zero progress loss and learning-history continuity."],skills:["Data Validation","LMS Migration","Reconciliation","Audit"]},
-    {title:"New LMS Application Onboarding",date:"PwC",category:"Professional Project",description:"Managed operational support for LMS data migration and integration with HRMS, Active Directory and third-party content providers.",scope:["Coordinated user-record and learning-history migration.","Supported integrations with HRMS, Active Directory and content providers.","Maintained runbooks, SOPs and knowledge articles while driving incident escalation and compliance."],skills:["LMS","HRMS","Incident Management","SOPs","Data Migration"]}
+    {
+      title:"Semantic Job Matcher",
+      date:"2026",
+      category:"Software Engineering Project",
+      featured:true,
+      githubUrl:"https://github.com/cm6-zombie/semantic-job-matcher",
+      description:"Built a multi-source Python job aggregation and semantic-ranking pipeline integrating public ATS APIs, official company career portals, and Gmail job alerts into a standardized job schema.",
+      scope:[
+        "Integrated public ATS APIs, official company career portals, and Gmail job alerts into a standardized job schema.",
+        "Engineered fault-isolated source processing and cross-source deduplication so individual source failures do not disrupt the pipeline.",
+        "Implemented semantic job ranking with Sentence Transformers and cosine similarity, using weighted scoring across job title, skills, and experience requirements.",
+        "Automated scheduled matching runs and batched Gmail notifications with persistent notification state; containerized the application with Docker and added pytest coverage."
+      ],
+      skills:["Python","Sentence Transformers","Text Embeddings","Semantic Search","Cosine Similarity","REST APIs","Gmail Integration","Data Normalization","Deduplication","Docker","pytest"]
+    },
+    {
+      title:"3D Dynamic Portfolio Platform",
+      date:"2026",
+      category:"Software Engineering Project",
+      featured:true,
+      demoUrl:"https://mainak-portfolio-chi.vercel.app/",
+      githubUrl:"https://github.com/cm6-zombie/My-3D-Website",
+      description:"Built and deployed a production-grade interactive portfolio using Next.js 14, TypeScript, React, React Three Fiber/Three.js, Framer Motion, and Vercel, with live developer-data integrations and graceful fallbacks.",
+      scope:[
+        "Built a responsive interactive 3D experience with React Three Fiber/Three.js and Framer Motion.",
+        "Implemented SEO metadata, analytics, and automated Vercel redeployment.",
+        "Designed server-side API routes to synchronize GitHub activity, LeetCode statistics, and Crio projects with caching, validation, deduplication, and fallback handling.",
+        "Developed a resume-grounded assistant using local retrieval with optional OpenAI-backed responses and verified local fallback context."
+      ],
+      skills:["Next.js 14","TypeScript","React","React Three Fiber","Three.js","Framer Motion","Vercel","REST APIs","Caching","Data Validation","Deduplication","OpenAI API","SEO","Analytics"]
+    },
+    {
+      title:"QKart QA Automation",
+      date:"2025 - Present",
+      category:"QA Automation Project",
+      featured:true,
+      description:"Built an end-to-end Java/Selenium/TestNG automation framework for the QKart e-commerce application covering registration, login, product search, cart, and checkout workflows.",
+      scope:[
+        "Automated registration, login, product search, cart, and checkout flows using Selenium WebDriver and TestNG.",
+        "Implemented reusable Page Object Model components, dynamic XPath, and explicit waits.",
+        "Added Apache POI data-driven testing, parameterization, grouping, assertions, and listener-based screenshots for failure diagnosis."
+      ],
+      skills:["Java","Selenium WebDriver","TestNG","Page Object Model (POM)","Dynamic XPath","Explicit Waits","Apache POI","Data-Driven Testing","Assertions","Test Listeners","Gradle"]
+    },
+    {title:"Project Tango AC Buenos Aires",date:"PwC",category:"Professional Project",description:"Validated and reconciled learner accounts during a large-scale LMS migration while preserving learning history and progress.",scope:["Applied completion-precedence rules during learner-account reconciliation.","Migrated exclusive training records to preserve learning-history continuity."],skills:["Data Validation","LMS Migration","Reconciliation","Audit"]},
+    {title:"New LMS Application Onboarding",date:"PwC",category:"Professional Project",description:"Managed operational support for LMS data migration and integration with HRMS, Active Directory and third-party content providers.",scope:["Coordinated user-record and learning-history migration.","Supported integrations with HRMS, Active Directory and third-party content providers.","Maintained runbooks, SOPs and knowledge articles while driving incident escalation and compliance."],skills:["LMS","HRMS","Incident Management","SOPs","Data Migration"]}
   ]
 };
 

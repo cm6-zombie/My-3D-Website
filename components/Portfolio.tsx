@@ -93,44 +93,31 @@ function mergeUniqueSkills(base: string[], discovered: string[]): string[] {
 
 function classifyCrioSkills(projects: AnyData[]) {
   const categories: Record<string, string[]> = {
-    qa: [], programming: [], cloud: [], operations: [], webAutomation: [], softwareEngineering: []
+    programming: [], qa: [], apiBackend: [], machineLearning: [], databases: [], cloudReliability: [], webAi: [], engineering: [], webAutomation: [], softwareEngineering: []
   };
-
   const push = (category: keyof typeof categories, skill: string) => categories[category].push(skill);
-
   for (const project of projects) {
     for (const rawSkill of Array.isArray(project?.skills) ? project.skills : []) {
-      const skill = cleanSkill(rawSkill);
-      if (!skill) continue;
+      const skill = cleanSkill(rawSkill); if (!skill) continue;
       const lower = skill.toLowerCase();
-
-      if (/window handling|frame|alert|actions class|javascript executor|dynamic date|dynamic time/.test(lower)) {
-        push("webAutomation", skill);
-      } else if (/object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) {
-        push("softwareEngineering", skill);
-      } else if (/selenium|testng|junit|page object|page factory|data-driven|functional testing|regression|smoke testing|ui testing|end-to-end|cross-browser|assertion|extent report|webdriver|apache poi|test listener|xpath|wait|dynamic element/.test(lower)) {
-        push("qa", skill);
-      } else if (/java|javascript|typescript|sql|mysql|microsoft sql|git|github|gradle|maven|json|rest api/.test(lower)) {
-        push("programming", skill);
-      } else if (/aws|ec2|iam|cloudwatch|cloudformation|terraform|ansible|s3|vpc|linux/.test(lower)) {
-        push("cloud", skill);
-      } else if (/servicenow|incident|problem management|rca|sla|release|lms|hrms|data migration|audit|sop/.test(lower)) {
-        push("operations", skill);
-      }
-      // Unknown labels are intentionally ignored so project metadata does not
-      // pollute the public Skills section with non-technology terms.
-
+      if (/window handling|frame|alert|actions class|javascript executor|dynamic date|dynamic time/.test(lower)) push("webAutomation", skill);
+      else if (/sentence transformer|embedding|semantic|cosine|ranking|scoring|resume parsing/.test(lower)) push("machineLearning", skill);
+      else if (/rest api|api integration|next\.js api|json|normalization|caching|fallback|validation|error handling|gmail integration/.test(lower)) push("apiBackend", skill);
+      else if (/selenium|testng|pytest|junit|page object|page factory|data-driven|functional testing|regression|smoke testing|ui testing|end-to-end|cross-browser|assertion|extent report|webdriver|apache poi|test listener|xpath|wait|dynamic element/.test(lower)) push("qa", skill);
+      else if (/mysql|microsoft sql|sql server/.test(lower)) push("databases", skill);
+      else if (/aws|ec2|iam|cloudwatch|cloudformation|terraform|ansible|s3|vpc|linux|rca|production monitoring|release validation/.test(lower)) push("cloudReliability", skill);
+      else if (/next\.js|react|three|framer|copilot|vercel|seo|analytics/.test(lower)) push("webAi", skill);
+      else if (/git|github actions|github|gradle|docker|oop|agile|scrum|stlc|object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) push("engineering", skill);
+      else if (/java|python|typescript|javascript|sql/.test(lower)) push("programming", skill);
+      else if (/object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) push("softwareEngineering", skill);
     }
   }
-
-  return Object.fromEntries(
-    Object.entries(categories).map(([key, values]) => [key, mergeUniqueSkills([], values)])
-  ) as Record<keyof typeof categories, string[]>;
+  return Object.fromEntries(Object.entries(categories).map(([key, values]) => [key, mergeUniqueSkills([], values)])) as Record<keyof typeof categories, string[]>;
 }
 
 export default function Portfolio() {
-  const [github, setGithub] = useState<AnyData>({ contributionsConfigured: false, repos: [], user: {} });
-  const [leetcode, setLeetcode] = useState<AnyData>({ accepted: 29, submissions: 39, acceptanceRate: 84.6, breakdown: [{ difficulty: "Easy", count: 27 }, { difficulty: "Medium", count: 2 }, { difficulty: "Hard", count: 0 }] });
+  const [github, setGithub] = useState<AnyData>({});
+  const [leetcode, setLeetcode] = useState<AnyData>({});
   const [crio, setCrio] = useState<AnyData>({ projects: [...profile.crioFallbackProjects, ...profile.fallbackProjects] });
   const [config, setConfig] = useState<AnyData>({ resumeUrl: profile.links.resume });
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -138,61 +125,22 @@ export default function Portfolio() {
   const [projectSearch, setProjectSearch] = useState("");
   const [projectFilter, setProjectFilter] = useState("All");
   const [chat, setChat] = useState(false);
-  const [messages, setMessages] = useState([{ role: "assistant", text: "Ask about Mainak's QA automation, AWS/Linux background, projects, or leadership experience." }]);
+  const [messages, setMessages] = useState([{ role: "assistant", text: "Ask about Mainak's test automation, Python/Java projects, APIs, semantic search, AWS/Linux background, or experience." }]);
   const [question, setQuestion] = useState("");
   const [thinking, setThinking] = useState(false);
   const refreshMs = Number(process.env.NEXT_PUBLIC_REFRESH_MS || 300000);
 
-  const CACHE_KEYS = {
-    github: "portfolio-cache-github-v1",
-    leetcode: "portfolio-cache-leetcode-v1",
-    crio: "portfolio-cache-crio-v1",
-    config: "portfolio-cache-config-v1"
-  } as const;
-
-  function readCache(key: string): AnyData | null {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-
-  function writeCache(key: string, value: AnyData) {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // Caching is optional. The portfolio still works without browser storage.
-    }
-  }
-
-  async function fetchSafe(url: string): Promise<AnyData | null> {
-    try {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) return null;
-      const value = await response.json();
-      if (!value || typeof value !== "object" || value.error) return null;
-      return value;
-    } catch {
-      return null;
-    }
-  }
-
   async function load() {
-    const [githubData, leetcodeData, crioData, configData] = await Promise.all([
-      fetchSafe("/api/github"),
-      fetchSafe("/api/leetcode"),
-      fetchSafe("/api/crio"),
-      fetchSafe("/api/config")
+    const results = await Promise.allSettled([
+      fetch("/api/github").then(r => r.json()),
+      fetch("/api/leetcode").then(r => r.json()),
+      fetch("/api/crio").then(r => r.json()),
+      fetch("/api/config").then(r => r.json())
     ]);
-
-    if (githubData) { setGithub(githubData); writeCache(CACHE_KEYS.github, githubData); }
-    if (leetcodeData) { setLeetcode(leetcodeData); writeCache(CACHE_KEYS.leetcode, leetcodeData); }
-    if (crioData?.projects?.length) { setCrio(crioData); writeCache(CACHE_KEYS.crio, crioData); }
-    if (configData) { setConfig(configData); writeCache(CACHE_KEYS.config, configData); }
+    if (results[0].status === "fulfilled") setGithub(results[0].value);
+    if (results[1].status === "fulfilled") setLeetcode(results[1].value);
+    if (results[2].status === "fulfilled") setCrio(results[2].value);
+    if (results[3].status === "fulfilled") setConfig(results[3].value);
   }
 
   useEffect(() => {
@@ -200,16 +148,6 @@ export default function Portfolio() {
     const initial = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
     setTheme(initial);
     document.documentElement.dataset.theme = initial;
-
-    const cachedGithub = readCache(CACHE_KEYS.github);
-    const cachedLeetcode = readCache(CACHE_KEYS.leetcode);
-    const cachedCrio = readCache(CACHE_KEYS.crio);
-    const cachedConfig = readCache(CACHE_KEYS.config);
-    if (cachedGithub) setGithub(cachedGithub);
-    if (cachedLeetcode) setLeetcode(cachedLeetcode);
-    if (cachedCrio?.projects?.length) setCrio(cachedCrio);
-    if (cachedConfig) setConfig(cachedConfig);
-
     load();
     const id = window.setInterval(load, refreshMs);
     return () => window.clearInterval(id);
@@ -232,7 +170,7 @@ export default function Portfolio() {
       const j = await r.json();
       setMessages(m => [...m, { role: "assistant", text: j.answer || "I could not answer that from the portfolio data." }]);
     } catch {
-      setMessages(m => [...m, { role: "assistant", text: "I could not process that request. You can still explore the portfolio or contact Mainak by email." }]);
+      setMessages(m => [...m, { role: "assistant", text: "The assistant is temporarily unavailable." }]);
     } finally { setThinking(false); }
   }
 
@@ -243,26 +181,18 @@ export default function Portfolio() {
   }, [crio.projects]);
   const crioSkillCategories = useMemo(() => classifyCrioSkills(allProjects), [allProjects]);
   const displayedSkills = useMemo(() => ({
-    qa: mergeUniqueSkills(
-      ["Selenium WebDriver","TestNG","Page Object Model","Data-Driven Testing","XPath","Apache POI"],
-      crioSkillCategories.qa
-    ),
-    programming: mergeUniqueSkills(
-      ["Core Java","SQL / T-SQL","MySQL","Microsoft SQL Server","Git","Gradle"],
-      crioSkillCategories.programming
-    ),
-    cloud: mergeUniqueSkills(
-      ["AWS EC2","IAM","CloudWatch","CloudFormation","Ansible","Terraform"],
-      crioSkillCategories.cloud
-    ),
-    operations: mergeUniqueSkills(
-      ["ServiceNow","Incident Management","RCA","SLA Management","Release Validation","Linux"],
-      crioSkillCategories.operations
-    ),
+    programming: mergeUniqueSkills(["Java","Python","TypeScript","SQL / T-SQL"], crioSkillCategories.programming),
+    qa: mergeUniqueSkills(["Selenium WebDriver","TestNG","pytest","Page Object Model (POM)","Apache POI","Data-Driven Testing","XPath","Assertions","Explicit Waits","Test Listeners"], crioSkillCategories.qa),
+    apiBackend: mergeUniqueSkills(["REST APIs","Next.js API Routes","JSON","API Integration","Data Validation","Error Handling","Data Normalization","Caching","Fallback Strategies"], crioSkillCategories.apiBackend),
+    machineLearning: mergeUniqueSkills(["Sentence Transformers","Text Embeddings","Semantic Search","Cosine Similarity","Ranking & Scoring Algorithms","Resume Parsing"], crioSkillCategories.machineLearning),
+    databases: mergeUniqueSkills(["MySQL","Microsoft SQL Server"], crioSkillCategories.databases),
+    cloudReliability: mergeUniqueSkills(["AWS EC2","IAM","CloudWatch","S3","VPC","Linux","Debugging","Root Cause Analysis (RCA)","Production Monitoring","Release Validation"], crioSkillCategories.cloudReliability),
+    webAi: mergeUniqueSkills(["Next.js","React","Microsoft Copilot Studio"], crioSkillCategories.webAi),
+    engineering: mergeUniqueSkills(["Git","GitHub Actions","Gradle","OOP","Agile / Scrum","STLC"], crioSkillCategories.engineering),
     webAutomation: crioSkillCategories.webAutomation,
     softwareEngineering: crioSkillCategories.softwareEngineering
   }), [crioSkillCategories]);
-  const projectFilters = ["All", "Featured", "Professional", "Mini", "Java", "Selenium", "AWS", "AI"];
+  const projectFilters = ["All", "Featured", "Python", "Java", "Selenium", "API", "Semantic Search", "AWS", "AI"];
   const filteredProjects = useMemo(() => allProjects.filter((p: any) => {
     const haystack = [p.title, p.description, p.category, ...(p.skills || [])].filter(Boolean).join(" ").toLowerCase();
     const matchesSearch = !projectSearch.trim() || haystack.includes(projectSearch.trim().toLowerCase());
@@ -274,7 +204,7 @@ export default function Portfolio() {
     return matchesSearch && matchesFilter;
   }), [allProjects, projectSearch, projectFilter]);
 
-  const navItems = ["About", "Skills", "Experience", "Projects", "Certifications", "Contact"];
+  const navItems = ["About", "Skills", "Experience", "Projects", "Education", "Contact"];
 
   return <main>
     <ConstellationBackground/>
@@ -292,8 +222,8 @@ export default function Portfolio() {
 
     <section id="top" className="hero">
       <motion.div className="hero-copy" initial={{opacity:0,x:-42}} animate={{opacity:1,x:0}} transition={{duration:.8}}>
-        <div className="availability"><span/> Open to QA Automation, SDET and Software Test Engineer opportunities</div>
-        <p className="eyebrow">BUILD · TEST · SUPPORT · IMPROVE</p>
+        <div className="availability"><span/> Open to SDET, Software Test Engineer and QA Automation opportunities</div>
+        <p className="eyebrow">BUILD · TEST · AUTOMATE · RELIABILITY</p>
         <h1>Engineering quality.<br/><span>Owning reliability.</span></h1>
         <h2>{profile.name} — {profile.title}</h2>
         <p className="hero-summary">{profile.summary}</p>
@@ -309,44 +239,46 @@ export default function Portfolio() {
       </motion.div>
       <motion.div className="scene-wrap" initial={{opacity:0,scale:.86}} animate={{opacity:1,scale:1}} transition={{duration:1}}>
         <div className="scene"><Scene/></div>
-        <div className="floating-card fc-one"><TestTube2 size={18}/><div><b>QA Automation</b><span>Selenium · TestNG · POM</span></div></div>
-        <div className="floating-card fc-two"><Cloud size={18}/><div><b>Cloud & Linux</b><span>AWS · Terraform · Ansible</span></div></div>
+        <div className="floating-card fc-one"><TestTube2 size={18}/><div><b>Test Automation</b><span>Java · Python · Selenium · pytest</span></div></div>
+        <div className="floating-card fc-two"><Cloud size={18}/><div><b>Software & Reliability</b><span>APIs · Semantic Search · AWS · Linux</span></div></div>
         <div className="scene-hint">Drag to explore the 3D skills world</div>
       </motion.div>
     </section>
 
     <section className="trust-strip">
-      <div><b>7+</b><span>Years in IT</span></div><div><b>90%</b><span>Reporting effort reduced</span></div><div><b>2,500+</b><span>Learner accounts reconciled</span></div><div><b>4</b><span>Core career domains</span></div>
+      <div><b>7</b><span>Years engineering experience</span></div><div><b>95%</b><span>Reporting effort reduced</span></div><div><b>350,000+</b><span>Learner accounts validated</span></div><div><b>3</b><span>Production-grade portfolio projects</span></div>
     </section>
 
     <section id="about" className="section split-section">
-      <motion.div {...reveal}><p className="eyebrow">ABOUT ME</p><h2>A production-minded engineer who connects testing with operational reality.</h2></motion.div>
-      <motion.div className="about-copy" {...reveal}><p>{profile.summary}</p><div className="about-points"><span><CheckCircle2/> Automation framework development</span><span><CheckCircle2/> Enterprise incident and problem ownership</span><span><CheckCircle2/> AWS/Linux infrastructure support</span><span><CheckCircle2/> Stakeholder and audit communication</span></div></motion.div>
+      <motion.div {...reveal}><p className="eyebrow">ABOUT ME</p><h2>Engineering across test automation, software delivery, and production reliability.</h2></motion.div>
+      <motion.div className="about-copy" {...reveal}><p>{profile.summary}</p><div className="about-points"><span><CheckCircle2/> Java, Python and Selenium automation</span><span><CheckCircle2/> APIs, semantic search and software projects</span><span><CheckCircle2/> AWS/Linux production reliability</span><span><CheckCircle2/> Release validation and structured RCA</span></div></motion.div>
     </section>
 
     <section id="stats" className="metrics">
       <Metric icon={<Github/>} label="GitHub repositories" value={github.user?.publicRepos ?? "—"} sub={`${github.user?.followers ?? 0} followers`}/>
       <Metric icon={<Code2/>} label="LeetCode solved" value={leetcode.accepted ?? "—"} sub={`${leetcode.acceptanceRate ?? "—"}% acceptance`}/>
-      <Metric icon={<BriefcaseBusiness/>} label="Professional experience" value="7+" sub="years across support and QA"/>
-      <Metric icon={<BarChart3/>} label="Annual contributions" value={github.contributions?.totalContributions ?? "—"} sub="GitHub activity"/>
+      <Metric icon={<BriefcaseBusiness/>} label="Professional experience" value="7+" sub="years across automation & reliability"/>
+      <Metric icon={<BarChart3/>} label="Annual contributions" value={github.contributions?.totalContributions ?? "—"} sub={github.contributionsConfigured ? "Live GitHub activity" : "Contribution data available when connected"}/>
     </section>
 
     <section id="skills" className="section">
-      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">CORE CAPABILITIES</p><h2>Skills built for reliable software delivery.</h2></div><p>Hands-on automation, infrastructure and support expertise—combined with the communication and ownership needed in enterprise environments.</p></motion.div>
+      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">CORE CAPABILITIES</p><h2>Skills aligned to software testing, backend integration and reliability engineering.</h2></div><p>Resume-aligned capabilities across programming, automation, APIs, semantic search, cloud reliability, and modern web engineering—with Crio skills merged dynamically.</p></motion.div>
       <div className="skill-category-grid">
-        <SkillCard icon={<TestTube2/>} title="QA Automation" items={displayedSkills.qa}/>
-        <SkillCard icon={<Terminal/>} title="Programming & Data" items={displayedSkills.programming}/>
-        <SkillCard icon={<Cloud/>} title="Cloud & Infrastructure" items={displayedSkills.cloud}/>
-        <SkillCard icon={<ShieldCheck/>} title="Operations & ITSM" items={displayedSkills.operations}/>
-        {displayedSkills.webAutomation.length > 0 && <SkillCard icon={<Globe2/>} title="Web Automation" items={displayedSkills.webAutomation}/>} 
-        {displayedSkills.softwareEngineering.length > 0 && <SkillCard icon={<Layers3/>} title="Software Engineering" items={displayedSkills.softwareEngineering}/>} 
-        <SkillCard icon={<Users/>} title="Leadership" items={profile.leadershipSkills}/>
-        <SkillCard icon={<Sparkles/>} title="Professional strengths" items={profile.softSkills}/>
+        <SkillCard icon={<Terminal/>} title="Programming Languages" items={displayedSkills.programming}/>
+        <SkillCard icon={<TestTube2/>} title="Test Automation" items={displayedSkills.qa}/>
+        <SkillCard icon={<Server/>} title="API & Backend" items={displayedSkills.apiBackend}/>
+        <SkillCard icon={<Sparkles/>} title="Machine Learning & Semantic Search" items={displayedSkills.machineLearning}/>
+        <SkillCard icon={<Database/>} title="Databases" items={displayedSkills.databases}/>
+        <SkillCard icon={<Cloud/>} title="Cloud, Systems & Reliability" items={displayedSkills.cloudReliability}/>
+        <SkillCard icon={<Globe2/>} title="Web Engineering & AI Platforms" items={displayedSkills.webAi}/>
+        <SkillCard icon={<Layers3/>} title="Build, CI/CD & Engineering Practices" items={displayedSkills.engineering}/>
+        {displayedSkills.webAutomation.length > 0 && <SkillCard icon={<Zap/>} title="Additional Web Automation" items={displayedSkills.webAutomation}/>} 
+        {displayedSkills.softwareEngineering.length > 0 && <SkillCard icon={<Code2/>} title="Additional Software Engineering" items={displayedSkills.softwareEngineering}/>}
       </div>
     </section>
 
     <section id="experience" className="section experience-section">
-      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">CAREER JOURNEY</p><h2>Experience shaped by ownership.</h2></div><p>From cloud infrastructure at TCS to enterprise LMS operations, automation and AI-led reporting at PwC.</p></motion.div>
+      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">CAREER JOURNEY</p><h2>Experience shaped by ownership.</h2></div><p>From AWS/Linux systems engineering at TCS to large-scale validation, release assurance, RCA and AI automation at PwC.</p></motion.div>
       <div className="timeline">{profile.experience.map((e, i) => <motion.article className="timeline-item" key={e.company} {...reveal}>
         <div className="timeline-marker"><span>{String(i+1).padStart(2,"0")}</span></div>
         <div className="timeline-card glass">
@@ -357,7 +289,7 @@ export default function Portfolio() {
     </section>
 
     <section id="projects" className="section projects-section">
-      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">SELECTED WORK</p><h2>Projects</h2></div><p>Projects synchronized from Crio and the résumé, with duplicates merged into one clean record.</p></motion.div>
+      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">SELECTED WORK</p><h2>Projects</h2></div><p>Google-resume projects are highlighted first; Crio projects remain synchronized dynamically and duplicate records are merged automatically.</p></motion.div>
       <div className="project-toolbar">
         <label className="project-search"><Search size={17}/><input value={projectSearch} onChange={e => setProjectSearch(e.target.value)} placeholder="Search projects or technologies" aria-label="Search projects"/></label>
         <div className="project-filters">{projectFilters.map(filter => <button key={filter} className={projectFilter === filter ? "active" : ""} onClick={() => setProjectFilter(filter)}>{filter}</button>)}</div>
@@ -381,21 +313,21 @@ export default function Portfolio() {
     </section>
 
     <section className="section data-section">
-      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">LIVE DEVELOPMENT DATA</p><h2>GitHub and LeetCode.</h2></div><p>Automatically refreshed activity that demonstrates consistent development and problem-solving practice.</p></motion.div>
+      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">LIVE DEVELOPMENT DATA</p><h2>GitHub and LeetCode.</h2></div><p>Live GitHub and LeetCode signals remain synchronized to demonstrate ongoing engineering and problem-solving activity.</p></motion.div>
       <div className="data-grid">
-        <div className="data-card glass"><div className="data-card-title"><Github/><div><h3>GitHub activity</h3><span>12-month contribution overview</span></div></div><ContributionGraph data={github.contributions}/></div>
+        <div className="data-card glass"><div className="data-card-title"><Github/><div><h3>GitHub activity</h3><span>{github.contributionsConfigured ? "Live 12-month contribution data" : "GitHub activity"}</span></div></div><ContributionGraph data={github.contributions}/></div>
         <div className="data-card glass"><div className="data-card-title"><Code2/><div><h3>LeetCode progress</h3><span>Live solved-problem tracking</span></div></div><div className="leetcode-panel"><div className="donut" style={{"--p":`${Math.min(100, leetcode.acceptanceRate || 0) * 3.6}deg`} as any}><div><b>{leetcode.acceptanceRate ?? "—"}%</b><span>Acceptance</span></div></div><div className="difficulty"><Progress label="Easy" value={totals.Easy || 0} max={Math.max(1,...Object.values(totals).map(Number))}/><Progress label="Medium" value={totals.Medium || 0} max={Math.max(1,...Object.values(totals).map(Number))}/><Progress label="Hard" value={totals.Hard || 0} max={Math.max(1,...Object.values(totals).map(Number))}/></div><div className="rank"><small>Global ranking</small><b>{leetcode.ranking?.toLocaleString?.() ?? "—"}</b><span>{leetcode.submissions ?? 0} submissions</span></div></div></div>
       </div>
     </section>
 
-    <section id="certifications" className="section">
-      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">LEARNING & CREDENTIALS</p><h2>Certifications and education.</h2></div><p>A foundation in Electronics and Communication Engineering, strengthened through cloud, AI and QA automation learning.</p></motion.div>
+    <section id="education" className="section">
+      <motion.div className="section-heading" {...reveal}><div><p className="eyebrow">EDUCATION</p><h2>Academic foundation.</h2></div><p>B.Tech in Electronics and Communication Engineering from the National Institute of Technology, Arunachal Pradesh.</p></motion.div>
       <div className="credential-grid">{profile.certifications.map((c, i) => <motion.article className="credential glass" key={c.title} {...reveal}><div className="credential-icon">{i===0?<Sparkles/>:i===1?<TestTube2/>:<Award/>}</div><div><span>{c.type}</span><h3>{c.title}</h3><p>{c.issuer}</p><small>{c.period}</small></div></motion.article>)}</div>
     </section>
 
     <section id="contact" className="section contact-section">
       <motion.div className="contact-card" {...reveal}>
-        <div><p className="eyebrow">LET'S WORK TOGETHER</p><h2>Looking for an engineer who understands both quality and production?</h2><p>Reach out for QA Automation, SDET, Software Testing, Application Support or operations-focused opportunities.</p></div>
+        <div><p className="eyebrow">LET'S WORK TOGETHER</p><h2>Looking for an engineer who combines test automation with software and production reliability?</h2><p>Reach out for SDET, Software Test Engineer, QA Automation, test infrastructure, or reliability-focused opportunities.</p></div>
         <div className="contact-actions"><a className="primary" href={`mailto:${profile.email}`}><Mail size={18}/> Email Mainak</a><a href={profile.links.github} target="_blank" rel="noreferrer"><Github size={18}/> View GitHub</a></div>
       </motion.div>
     </section>
@@ -410,5 +342,5 @@ export default function Portfolio() {
 function Metric({icon,label,value,sub}:{icon:React.ReactNode,label:string,value:any,sub:string}){return <motion.div className="metric glass" {...reveal}><div className="metric-icon">{icon}</div><div><small>{label}</small><b>{value}</b><span>{sub}</span></div></motion.div>}
 function SkillCard({icon,title,items}:{icon:React.ReactNode,title:string,items:string[]}){return <motion.article className="skill-card glass" {...reveal}><div className="skill-icon">{icon}</div><h3>{title}</h3><div className="skill-list">{items.map(x=><span key={x}>{x}</span>)}</div></motion.article>}
 function Progress({label,value,max}:{label:string,value:number,max:number}){return <div className="progress"><div><span>{label}</span><b>{value}</b></div><div className="track"><span style={{width:`${Math.max(4,(value/max)*100)}%`}}/></div></div>}
-function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="contribution-wrap" aria-label="GitHub contribution activity"><div className="contribution-grid">{Array.from({length:371},(_,i)=><span key={i} className="level-0"/>)}</div><div className="graph-caption"><span>GitHub activity</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${({ NONE:0, FIRST_QUARTILE:1, SECOND_QUARTILE:2, THIRD_QUARTILE:3, FOURTH_QUARTILE:4 } as Record<string, number>)[String(d.contributionLevel)] ?? Math.min(4, Number(d.contributionCount || 0) > 0 ? 1 : 0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
-function isFeaturedProject(title:string){return /^(qtrip qa|qcalc|amazon store automation|flipkart automation|leetcode automation|youtube automation)$/i.test((title||"").trim())}
+function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="graph-empty"><Github size={28}/><p>Contribution data will appear here after the GitHub token is configured.</p></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${Math.min(4,d.contributionLevel||0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
+function isFeaturedProject(title:string){return /^(semantic job matcher|3d dynamic portfolio platform|qkart qa automation|qtrip qa|qcalc|amazon store automation|flipkart automation|leetcode automation|youtube automation)$/i.test((title||"").trim())}
