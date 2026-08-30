@@ -42,26 +42,6 @@ function isSafeProjectRecord(project: AnyData): boolean {
 
 const reveal = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.16 }, transition: { duration: 0.55 } };
 
-const STARRED_PROJECT: AnyData = {
-  title: "Semantic Job Matcher",
-  date: "Aug 2026",
-  category: "Featured AI Project",
-  featured: true,
-  starred: true,
-  description: "Production multi-source semantic job-matching pipeline that builds a reusable resume profile, collects live jobs from public and official sources, normalizes them into one schema, calculates explainable semantic match scores, and sends batched email alerts for qualifying opportunities while suppressing duplicate notifications.",
-  scope: [
-    "Aggregates jobs from Remote OK, ATS APIs, official company career portals, and LinkedIn/Naukri job-alert emails.",
-    "Ranks opportunities using sentence-transformer embeddings, cosine similarity, skill coverage, title alignment, and experience fit.",
-    "Runs automatically with GitHub Actions, isolates source failures, and persists notification state to prevent duplicate alerts.",
-    "Sends one Gmail notification batch for new jobs meeting the configurable match threshold, with an 80% production default."
-  ],
-  skills: [
-    "Python", "Sentence Transformers", "Semantic Search", "Cosine Similarity", "GitHub Actions",
-    "Greenhouse API", "Lever API", "Ashby API", "SmartRecruiters", "Workday", "IMAP", "SMTP"
-  ],
-  githubUrl: "https://github.com/cm6-zombie/semantic-job-matcher"
-};
-
 const SKILL_ALIASES: Record<string, string> = {
   "selenium": "Selenium WebDriver",
   "selenium webdriver": "Selenium WebDriver",
@@ -120,30 +100,16 @@ function classifyCrioSkills(projects: AnyData[]) {
     for (const rawSkill of Array.isArray(project?.skills) ? project.skills : []) {
       const skill = cleanSkill(rawSkill); if (!skill) continue;
       const lower = skill.toLowerCase();
-      if (/window handling|frame|alert|actions class|javascript executor|dynamic date|dynamic time/.test(lower)) {
-        push("webAutomation", skill);
-      } else if (/sentence transformer|embedding|semantic|cosine|ranking|scoring|resume parsing/.test(lower)) {
-        push("machineLearning", skill);
-      } else if (/rest api|api integration|next\.js api|json|normalization|caching|fallback|validation|error handling|gmail integration/.test(lower)) {
-        push("apiBackend", skill);
-      } else if (/selenium|testng|pytest|junit|page object|page factory|data-driven|functional testing|regression|smoke testing|ui testing|end-to-end|cross-browser|assertion|extent report|webdriver|apache poi|test listener|xpath|wait|dynamic element/.test(lower)) {
-        push("qa", skill);
-      } else if (/mysql|microsoft sql|sql server/.test(lower)) {
-        push("databases", skill);
-      } else if (/aws|ec2|iam|cloudwatch|cloudformation|terraform|ansible|s3|vpc|linux|rca|production monitoring|release validation/.test(lower)) {
-        push("cloudReliability", skill);
-        push("cloud", skill);
-      } else if (/next\.js|react|three|framer|copilot|vercel|seo|analytics/.test(lower)) {
-        push("webAi", skill);
-      } else if (/object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) {
-        push("softwareEngineering", skill);
-      } else if (/git|github actions|github|gradle|docker|oop|agile|scrum|stlc/.test(lower)) {
-        push("engineering", skill);
-      } else if (/java|python|typescript|javascript|sql|maven|json|rest api/.test(lower)) {
-        push("programming", skill);
-      } else if (/servicenow|incident|problem management|rca|sla|release|lms|hrms|data migration|audit|sop/.test(lower)) {
-        push("operations", skill);
-      }
+      if (/window handling|frame|alert|actions class|javascript executor|dynamic date|dynamic time/.test(lower)) push("webAutomation", skill);
+      else if (/sentence transformer|embedding|semantic|cosine|ranking|scoring|resume parsing/.test(lower)) push("machineLearning", skill);
+      else if (/rest api|api integration|next\.js api|json|normalization|caching|fallback|validation|error handling|gmail integration/.test(lower)) push("apiBackend", skill);
+      else if (/selenium|testng|pytest|junit|page object|page factory|data-driven|functional testing|regression|smoke testing|ui testing|end-to-end|cross-browser|assertion|extent report|webdriver|apache poi|test listener|xpath|wait|dynamic element/.test(lower)) push("qa", skill);
+      else if (/mysql|microsoft sql|sql server/.test(lower)) push("databases", skill);
+      else if (/aws|ec2|iam|cloudwatch|cloudformation|terraform|ansible|s3|vpc|linux|rca|production monitoring|release validation/.test(lower)) push("cloudReliability", skill);
+      else if (/next\.js|react|three|framer|copilot|vercel|seo|analytics/.test(lower)) push("webAi", skill);
+      else if (/git|github actions|github|gradle|docker|oop|agile|scrum|stlc|object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) push("engineering", skill);
+      else if (/java|python|typescript|javascript|sql/.test(lower)) push("programming", skill);
+      else if (/object-oriented|unit testing|debugging|exception handling|collections|file handling/.test(lower)) push("softwareEngineering", skill);
     }
   }
   return Object.fromEntries(Object.entries(categories).map(([key, values]) => [key, mergeUniqueSkills([], values)])) as Record<keyof typeof categories, string[]>;
@@ -210,12 +176,8 @@ export default function Portfolio() {
 
   const totals = useMemo(() => Object.fromEntries((leetcode.breakdown || []).map((x: any) => [x.difficulty, x.count])), [leetcode]);
   const allProjects = useMemo(() => {
-    const syncedProjects = Array.isArray(crio.projects) ? crio.projects : [...profile.crioFallbackProjects, ...profile.fallbackProjects];
-    const source = [STARRED_PROJECT, ...syncedProjects.filter((project: any) => String(project?.title || "").trim().toLowerCase() !== "semantic job matcher")];
-    return source.filter(isSafeProjectRecord).sort((a: any, b: any) =>
-      Number(Boolean(b.starred)) - Number(Boolean(a.starred)) ||
-      Number(isFeaturedProject(b.title)) - Number(isFeaturedProject(a.title))
-    );
+    const source = Array.isArray(crio.projects) ? crio.projects : [...profile.crioFallbackProjects, ...profile.fallbackProjects];
+    return source.filter(isSafeProjectRecord).sort((a: any, b: any) => Number(isFeaturedProject(b.title)) - Number(isFeaturedProject(a.title)));
   }, [crio.projects]);
   const crioSkillCategories = useMemo(() => classifyCrioSkills(allProjects), [allProjects]);
   const displayedSkills = useMemo(() => ({
@@ -236,7 +198,7 @@ export default function Portfolio() {
     const matchesSearch = !projectSearch.trim() || haystack.includes(projectSearch.trim().toLowerCase());
     const filter = projectFilter.toLowerCase();
     const matchesFilter = projectFilter === "All" ||
-      (projectFilter === "Featured" && (p.starred || isFeaturedProject(p.title))) ||
+      (projectFilter === "Featured" && isFeaturedProject(p.title)) ||
       (projectFilter === "Professional" && /professional/i.test(p.category || "")) ||
       (projectFilter === "Mini" && /mini/i.test(p.category || "")) || haystack.includes(filter);
     return matchesSearch && matchesFilter;
@@ -336,7 +298,7 @@ export default function Portfolio() {
         const primaryUrl = p.detailsUrl || p.githubUrl || p.demoUrl;
         return <motion.article className={`project-card glass${primaryUrl ? " clickable" : ""}`} key={`${p.title}-${i}`} {...reveal} onClick={() => primaryUrl && window.open(primaryUrl, "_blank", "noopener,noreferrer")}> 
           <div className="project-card-head"><span className="number">{String(i+1).padStart(2,"0")}</span><span className="project-type">{p.category || "Professional Project"}</span></div>
-          {p.starred ? <span className="featured-ribbon"><Sparkles size={13}/> ★ Starred Featured Project</span> : isFeaturedProject(p.title) && <span className="featured-ribbon"><Sparkles size={13}/> Featured Project</span>}
+          {isFeaturedProject(p.title) && <span className="featured-ribbon"><Sparkles size={13}/> Featured Project</span>}
           <h3>{p.title}</h3>{p.date && <p className="project-date">{p.date}</p>}
           <p className="project-description">{p.description || "Project details are available in the portfolio."}</p>
           {Array.isArray(p.scope) && p.scope.length > 0 && <div className="project-scope"><h4>Scope of work</h4><ul>{p.scope.map((item: string) => <li key={item}><CheckCircle2 size={14}/><span>{item}</span></li>)}</ul></div>}
@@ -380,5 +342,5 @@ export default function Portfolio() {
 function Metric({icon,label,value,sub}:{icon:React.ReactNode,label:string,value:any,sub:string}){return <motion.div className="metric glass" {...reveal}><div className="metric-icon">{icon}</div><div><small>{label}</small><b>{value}</b><span>{sub}</span></div></motion.div>}
 function SkillCard({icon,title,items}:{icon:React.ReactNode,title:string,items:string[]}){return <motion.article className="skill-card glass" {...reveal}><div className="skill-icon">{icon}</div><h3>{title}</h3><div className="skill-list">{items.map(x=><span key={x}>{x}</span>)}</div></motion.article>}
 function Progress({label,value,max}:{label:string,value:number,max:number}){return <div className="progress"><div><span>{label}</span><b>{value}</b></div><div className="track"><span style={{width:`${Math.max(4,(value/max)*100)}%`}}/></div></div>}
-function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="graph-empty"><Github size={28}/><p>Contribution data will appear here after the GitHub token is configured.</p></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${({ NONE:0, FIRST_QUARTILE:1, SECOND_QUARTILE:2, THIRD_QUARTILE:3, FOURTH_QUARTILE:4 } as Record<string, number>)[String(d.contributionLevel)] ?? Math.min(4, Number(d.contributionCount || 0) > 0 ? 1 : 0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
+function ContributionGraph({data}:{data:any}){const weeks=data?.weeks||[];if(!weeks.length)return <div className="graph-empty"><Github size={28}/><p>Contribution data will appear here after the GitHub token is configured.</p></div>;return <div className="contribution-wrap"><div className="contribution-grid">{weeks.flatMap((w:any)=>w.days||[]).map((d:any,i:number)=><span key={i} title={`${d.date}: ${d.contributionCount}`} className={`level-${Math.min(4,d.contributionLevel||0)}`}/>)}</div><div className="graph-caption"><span>{data.totalContributions} contributions in the last year</span><span>Less <i className="level-0"/><i className="level-1"/><i className="level-2"/><i className="level-3"/><i className="level-4"/> More</span></div></div>}
 function isFeaturedProject(title:string){return /^(semantic job matcher|3d dynamic portfolio platform|qkart qa automation|qtrip qa|qcalc|amazon store automation|flipkart automation|leetcode automation|youtube automation)$/i.test((title||"").trim())}
